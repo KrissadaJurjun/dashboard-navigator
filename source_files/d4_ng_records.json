@@ -1,0 +1,150 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 205,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "align": "auto",
+            "cellOptions": {
+              "type": "auto"
+            },
+            "filterable": true,
+            "inspect": false
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 24,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "cellHeight": "sm",
+        "footer": {
+          "countRows": false,
+          "fields": "",
+          "reducer": [
+            "sum"
+          ],
+          "show": false
+        },
+        "showHeader": true,
+        "sortBy": [
+          {
+            "desc": false,
+            "displayName": "Status"
+          }
+        ]
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "SELECT\r\n    REPLACE(LTRIM(RTRIM([Production Date [S]]])), '-', '/') AS [Production Date],\r\n    LTRIM(RTRIM([Production Time]))                    AS [Production Time],\r\n    LTRIM(RTRIM([Part No.]))                              AS [Part No.],\r\n    LTRIM(RTRIM([Part Name]))                            AS [Part Name],\r\n    LTRIM(RTRIM([Mold No.]))                              AS [Mold No.],\r\n    LTRIM(RTRIM([Cavity No.]))                            AS [Cavity No.],\r\n    LTRIM(RTRIM([M/C No.]))                               AS [M/C No.],\r\n    LTRIM(RTRIM([Lot Material]))                         AS [Lot Material],\r\n    LTRIM(RTRIM([Sample Part No.]))                       AS [Sample Part No.],\r\n    LTRIM(RTRIM([Condition STD]))                        AS [Condition STD],\r\n    LTRIM(RTRIM([OI No.]))                                AS [OI No.],\r\n    LTRIM(RTRIM([ISC]))                                  AS [ISC],\r\n    LTRIM(RTRIM([STD Value]))                            AS [STD],\r\n    LTRIM(RTRIM([Upper Limit]))                          AS [UL],\r\n    LTRIM(RTRIM([Lower Limit]))                          AS [LL],\r\n    ISNULL(CONVERT(NVARCHAR(50), [XBar]), '')            AS [XBar],\r\n    ISNULL(CONVERT(NVARCHAR(50), [XBar]), '')            AS [Data],\r\n    CASE\r\n        WHEN [XBar] > TRY_CAST(LTRIM(RTRIM([Upper Limit])) AS FLOAT)\r\n            THEN 'HIGH NG'\r\n        WHEN [XBar] < TRY_CAST(LTRIM(RTRIM([Lower Limit])) AS FLOAT)\r\n            THEN 'LOW NG'\r\n        ELSE 'LOT NG'\r\n    END                                                  AS [Status],\r\n    LTRIM(RTRIM([Source Path]))                          AS [Source Path]\r\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\nWHERE\r\n    LTRIM(RTRIM([Part Type]))       = 'Injection'\r\n    AND LTRIM(RTRIM([Judgement [S]]])) = 'X'\r\n    AND ISNULL([Upper Limit], '') NOT LIKE '[0-9]%E[0-9][0-9][0-9][0-9]%'\r\n    AND ISNULL([Lower Limit], '') NOT LIKE '[0-9]%E[0-9][0-9][0-9][0-9]%'\r\nORDER BY [Production Date [S]]] DESC, [ISC] ASC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "NG RECORDS DETAILS",
+      "transformations": [
+        {
+          "id": "convertFieldType",
+          "options": {
+            "conversions": [
+              {
+                "destinationType": "string",
+                "targetField": "Lot Material"
+              }
+            ],
+            "fields": {}
+          }
+        }
+      ],
+      "type": "table"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": []
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "NG RECORDS DETAILS",
+  "uid": "efo6c6m2269kwe",
+  "version": 35,
+  "weekStart": ""
+}

@@ -1,0 +1,310 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 200,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 23,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 3,
+            "pointSize": 18,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "normal"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 11,
+        "w": 19,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH NgLots AS (\r\n    SELECT\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS prod_date,\r\n        TRY_CAST(LTRIM(RTRIM([Cycle Time (sec)])) AS FLOAT) AS ct_sec,\r\n        LTRIM(RTRIM([Part No.]))     AS part_no,\r\n        [Identical ID],\r\n        [Lot],\r\n        [Judgement [S]]],\r\n        TRY_CONVERT(TIME, [Production Date [S]]]) AS prod_time,\r\n        MAX(CASE WHEN [Judgement [S]]] = 'X'\r\n                 THEN 1 ELSE 0 END) AS is_ng,\r\n        LTRIM(RTRIM([Part Name]))       AS part_name,\r\n        LTRIM(RTRIM([Material No.]))    AS material_no,\r\n        LTRIM(RTRIM([OI No.]))          AS oi_no,\r\n        LTRIM(RTRIM([Sample Part No.])) AS sample_part_no,\r\n        LTRIM(RTRIM([Lot Material]))    AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))   AS condition_std,\r\n        LTRIM(RTRIM([QC Member]))       AS qc_member_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Cycle Time (sec)])) AS FLOAT) BETWEEN 1 AND 300\r\n        AND [Judgement [S]]] IN ('O', 'X')\r\n        AND (\r\n            '${ct_month:csv}' = 'All'\r\n            OR CASE CAST(LTRIM(RTRIM([Month Record])) AS INT)\r\n                WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n               END IN (${ct_month:singlequote})\r\n        )\r\n        AND ('${ct_year:csv}'    = 'All' OR LTRIM(RTRIM([Year Record])) IN (${ct_year:singlequote}))\r\n        AND ('${ct_mc_no:csv}'   = 'All' OR LTRIM(RTRIM([M/C No.]))     IN (${ct_mc_no:singlequote}))\r\n        AND ('${ct_mold:csv}'    = 'All' OR LTRIM(RTRIM([Mold No.]))    IN (${ct_mold:singlequote}))\r\n        AND ('${ct_part_no:csv}' = 'All' OR LTRIM(RTRIM([Part No.]))    IN (${ct_part_no:singlequote}))\r\n        AND TRY_CONVERT(DATETIME, [Production Date [S]]]) >= $__timeFrom()\r\n        AND TRY_CONVERT(DATETIME, [Production Date [S]]]) <= $__timeTo()\r\n    GROUP BY\r\n        TRY_CONVERT(DATE, [Production Date [S]]]),\r\n        TRY_CAST(LTRIM(RTRIM([Cycle Time (sec)])) AS FLOAT),\r\n        LTRIM(RTRIM([Part No.])),\r\n        [Identical ID], [Lot], [Judgement [S]]],\r\n        TRY_CONVERT(TIME, [Production Date [S]]]),\r\n        LTRIM(RTRIM([Part Name])),\r\n        LTRIM(RTRIM([Material No.])),\r\n        LTRIM(RTRIM([OI No.])),\r\n        LTRIM(RTRIM([Sample Part No.])),\r\n        LTRIM(RTRIM([Lot Material])),\r\n        LTRIM(RTRIM([Condition STD])),\r\n        LTRIM(RTRIM([QC Member]))\r\n),\r\nNgLots_clean AS (\r\n    SELECT * FROM NgLots\r\n    WHERE prod_date IS NOT NULL\r\n),\r\nd_part_name AS (SELECT DISTINCT prod_date, ct_sec, part_name      FROM NgLots_clean),\r\nd_material  AS (SELECT DISTINCT prod_date, ct_sec, material_no    FROM NgLots_clean),\r\nd_oi        AS (SELECT DISTINCT prod_date, ct_sec, oi_no          FROM NgLots_clean),\r\nd_sample    AS (SELECT DISTINCT prod_date, ct_sec, sample_part_no FROM NgLots_clean),\r\nd_lot       AS (SELECT DISTINCT prod_date, ct_sec, lot_material   FROM NgLots_clean),\r\nd_cond      AS (SELECT DISTINCT prod_date, ct_sec, condition_std  FROM NgLots_clean),\r\nd_qc        AS (SELECT DISTINCT prod_date, ct_sec, qc_member_val  FROM NgLots_clean),\r\nagg_part_name AS (SELECT prod_date, ct_sec, STRING_AGG(part_name,      ' / ') AS part_name_agg      FROM d_part_name GROUP BY prod_date, ct_sec),\r\nagg_material  AS (SELECT prod_date, ct_sec, STRING_AGG(material_no,    ' / ') AS material_no_agg    FROM d_material  GROUP BY prod_date, ct_sec),\r\nagg_oi        AS (SELECT prod_date, ct_sec, STRING_AGG(oi_no,          ' / ') AS oi_no_agg          FROM d_oi        GROUP BY prod_date, ct_sec),\r\nagg_sample    AS (SELECT prod_date, ct_sec, STRING_AGG(sample_part_no, ' / ') AS sample_part_no_agg FROM d_sample    GROUP BY prod_date, ct_sec),\r\nagg_lot       AS (SELECT prod_date, ct_sec, STRING_AGG(lot_material,   ' / ') AS lot_material_agg   FROM d_lot       GROUP BY prod_date, ct_sec),\r\nagg_cond      AS (SELECT prod_date, ct_sec, STRING_AGG(condition_std,  ' / ') AS condition_std_agg  FROM d_cond      GROUP BY prod_date, ct_sec),\r\nagg_qc        AS (SELECT prod_date, ct_sec, STRING_AGG(qc_member_val,  ' / ') AS qc_member_agg      FROM d_qc        GROUP BY prod_date, ct_sec),\r\nNgByDate AS (\r\n    SELECT\r\n        n.prod_date,\r\n        n.ct_sec,\r\n        CASE WHEN SUM(n.is_ng) > 0 THEN n.ct_sec ELSE NULL END AS ng_cycle_time_sec_marker,\r\n        CASE WHEN SUM(n.is_ng) > 0\r\n             THEN STRING_AGG(CASE WHEN n.is_ng = 1 THEN n.part_no END, ' | ')\r\n             ELSE NULL END                                       AS part_no_on_breakdown,\r\n        MAX(CASE WHEN n.is_ng = 1 AND n.[Judgement [S]]] = 'X'\r\n                 THEN n.prod_time END)                           AS ng_production_time,\r\n        MAX(apn.part_name_agg)      AS part_name,\r\n        MAX(am.material_no_agg)     AS material_no,\r\n        MAX(ao.oi_no_agg)           AS oi_no,\r\n        MAX(asa.sample_part_no_agg) AS sample_part_no,\r\n        MAX(al.lot_material_agg)    AS lot_material,\r\n        MAX(ac.condition_std_agg)   AS condition_std,\r\n        MAX(aq.qc_member_agg)       AS qc_member\r\n    FROM NgLots_clean        n\r\n    LEFT JOIN agg_part_name apn ON apn.prod_date = n.prod_date AND apn.ct_sec = n.ct_sec\r\n    LEFT JOIN agg_material   am ON am.prod_date  = n.prod_date AND am.ct_sec  = n.ct_sec\r\n    LEFT JOIN agg_oi         ao ON ao.prod_date  = n.prod_date AND ao.ct_sec  = n.ct_sec\r\n    LEFT JOIN agg_sample    asa ON asa.prod_date = n.prod_date AND asa.ct_sec = n.ct_sec\r\n    LEFT JOIN agg_lot        al ON al.prod_date  = n.prod_date AND al.ct_sec  = n.ct_sec\r\n    LEFT JOIN agg_cond       ac ON ac.prod_date  = n.prod_date AND ac.ct_sec  = n.ct_sec\r\n    LEFT JOIN agg_qc         aq ON aq.prod_date  = n.prod_date AND aq.ct_sec  = n.ct_sec\r\n    GROUP BY n.prod_date, n.ct_sec\r\n)\r\nSELECT\r\n    CASE\r\n        WHEN ng.ng_production_time IS NOT NULL\r\n        THEN CAST(\r\n                CAST(TRY_CONVERT(DATE, m.[Production Date [S]]]) AS DATETIME)\r\n                + CAST(ng.ng_production_time AS DATETIME)\r\n             AS DATETIME)\r\n        ELSE CAST(TRY_CONVERT(DATE, m.[Production Date [S]]]) AS DATETIME)\r\n    END                                                            AS time,\r\n    TRY_CAST(LTRIM(RTRIM(m.[Cycle Time (sec)])) AS FLOAT)         AS cycle_time_sec,\r\n    ng.ng_cycle_time_sec_marker,\r\n    ng.part_no_on_breakdown,\r\n    ng.ng_production_time                                          AS ng_judgement_x_production_time,\r\n    ng.part_name      AS [Part Name],\r\n    ng.material_no    AS [Material No.],\r\n    ng.oi_no          AS [OI No.],\r\n    ng.sample_part_no AS [Sample Part No.],\r\n    ng.lot_material   AS [Lot Material],\r\n    ng.condition_std  AS [Condition STD],\r\n    ng.qc_member      AS [QC Member]\r\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database] AS m\r\nLEFT JOIN NgByDate AS ng\r\n    ON  TRY_CONVERT(DATE, m.[Production Date [S]]]) = ng.prod_date\r\n    AND TRY_CAST(LTRIM(RTRIM(m.[Cycle Time (sec)])) AS FLOAT) = ng.ct_sec\r\nWHERE\r\n    [Part Type] = 'Injection'\r\n    AND TRY_CAST(LTRIM(RTRIM(m.[Cycle Time (sec)])) AS FLOAT) BETWEEN 1 AND 300\r\n    AND m.[Production Date [S]]] IS NOT NULL\r\n    AND TRY_CONVERT(DATE, m.[Production Date [S]]]) IS NOT NULL\r\n    AND TRY_CONVERT(DATETIME, m.[Production Date [S]]]) >= $__timeFrom()\r\n    AND TRY_CONVERT(DATETIME, m.[Production Date [S]]]) <= $__timeTo()\r\n    AND (\r\n        '${ct_month:csv}' = 'All'\r\n        OR CASE CAST(LTRIM(RTRIM(m.[Month Record])) AS INT)\r\n                WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n           END IN (${ct_month:singlequote})\r\n    )\r\n    AND ('${ct_year:csv}'    = 'All' OR LTRIM(RTRIM(m.[Year Record]))  IN (${ct_year:singlequote}))\r\n    AND ('${ct_mc_no:csv}'   = 'All' OR LTRIM(RTRIM(m.[M/C No.]))      IN (${ct_mc_no:singlequote}))\r\n    AND ('${ct_mold:csv}'    = 'All' OR LTRIM(RTRIM(m.[Mold No.]))     IN (${ct_mold:singlequote}))\r\n    AND ('${ct_part_no:csv}' = 'All' OR LTRIM(RTRIM(m.[Part No.]))     IN (${ct_part_no:singlequote}))\r\nORDER BY time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        },
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\r\n    SELECT\r\n        -- ✅ ใช้ TRY_CONVERT แทน CAST → ป้องกัน out-of-range error\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS prod_date,\r\n        [Judgement [S]]],\r\n        LTRIM(RTRIM([Part No.]))            AS part_no,\r\n        LTRIM(RTRIM([Part Name]))           AS part_name,\r\n        LTRIM(RTRIM([Material No.]))        AS material_no,\r\n        LTRIM(RTRIM([OI No.]))              AS oi_no,\r\n        LTRIM(RTRIM([Sample Part No.]))     AS sample_part_no,\r\n        LTRIM(RTRIM([Lot Material]))        AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))       AS condition_std,\r\n        LTRIM(RTRIM([QC Member]))           AS qc_member_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Judgement [S]]] IN ('O', 'X')\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        -- ✅ กรอง row ที่แปลงไม่ได้ออกก่อน\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Cycle Time (sec)])) AS FLOAT) BETWEEN 1 AND 300\r\n        AND TRY_CONVERT(DATETIME, [Production Date [S]]]) >= $__timeFrom()\r\n        AND TRY_CONVERT(DATETIME, [Production Date [S]]]) <= $__timeTo()\r\n        AND ('${ct_year:csv}'    = 'All' OR LTRIM(RTRIM([Year Record])) IN (${ct_year:singlequote}))\r\n        AND ('${ct_mc_no:csv}'   = 'All' OR LTRIM(RTRIM([M/C No.]))     IN (${ct_mc_no:singlequote}))\r\n        AND ('${ct_mold:csv}'    = 'All' OR LTRIM(RTRIM([Mold No.]))    IN (${ct_mold:singlequote}))\r\n        AND ('${ct_part_no:csv}' = 'All' OR LTRIM(RTRIM([Part No.]))    IN (${ct_part_no:singlequote}))\r\n),\r\n-- ✅ กรอง prod_date NULL ออก (rows ที่แปลงไม่ได้)\r\nbase_clean AS (\r\n    SELECT * FROM base\r\n    WHERE prod_date IS NOT NULL\r\n),\r\nd_part_name AS (SELECT DISTINCT prod_date, part_name      FROM base_clean),\r\nd_material  AS (SELECT DISTINCT prod_date, material_no    FROM base_clean),\r\nd_oi        AS (SELECT DISTINCT prod_date, oi_no          FROM base_clean),\r\nd_sample    AS (SELECT DISTINCT prod_date, sample_part_no FROM base_clean),\r\nd_lot       AS (SELECT DISTINCT prod_date, lot_material   FROM base_clean),\r\nd_cond      AS (SELECT DISTINCT prod_date, condition_std  FROM base_clean),\r\nd_qc        AS (SELECT DISTINCT prod_date, qc_member_val  FROM base_clean),\r\nagg_pn  AS (SELECT prod_date, STRING_AGG(part_name,      ' / ') AS part_name_agg      FROM d_part_name GROUP BY prod_date),\r\nagg_mat AS (SELECT prod_date, STRING_AGG(material_no,    ' / ') AS material_no_agg    FROM d_material  GROUP BY prod_date),\r\nagg_oi  AS (SELECT prod_date, STRING_AGG(oi_no,          ' / ') AS oi_no_agg          FROM d_oi        GROUP BY prod_date),\r\nagg_sp  AS (SELECT prod_date, STRING_AGG(sample_part_no, ' / ') AS sample_part_no_agg FROM d_sample    GROUP BY prod_date),\r\nagg_lot AS (SELECT prod_date, STRING_AGG(lot_material,   ' / ') AS lot_material_agg   FROM d_lot       GROUP BY prod_date),\r\nagg_cnd AS (SELECT prod_date, STRING_AGG(condition_std,  ' / ') AS condition_std_agg  FROM d_cond      GROUP BY prod_date),\r\nagg_qc  AS (SELECT prod_date, STRING_AGG(qc_member_val,  ' / ') AS qc_member_agg      FROM d_qc        GROUP BY prod_date)\r\nSELECT\r\n    CAST(b.prod_date AS DATETIME)            AS time,\r\n    STRING_AGG(\r\n        CASE WHEN b.[Judgement [S]]] = 'X'\r\n             THEN b.part_no END, ' | '\r\n    )                                        AS part_no_on_breakdown,\r\n    MAX(apn.part_name_agg)                   AS [Part Name],\r\n    MAX(am.material_no_agg)                  AS [Material No.],\r\n    MAX(ao.oi_no_agg)                        AS [OI No.],\r\n    MAX(asp.sample_part_no_agg)              AS [Sample Part No.],\r\n    MAX(al.lot_material_agg)                 AS [Lot Material],\r\n    MAX(ac.condition_std_agg)                AS [Condition STD],\r\n    MAX(aq.qc_member_agg)                    AS [QC Member]\r\nFROM base_clean              b\r\nLEFT JOIN agg_pn  apn ON apn.prod_date = b.prod_date\r\nLEFT JOIN agg_mat  am ON am.prod_date  = b.prod_date\r\nLEFT JOIN agg_oi   ao ON ao.prod_date  = b.prod_date\r\nLEFT JOIN agg_sp  asp ON asp.prod_date = b.prod_date\r\nLEFT JOIN agg_lot  al ON al.prod_date  = b.prod_date\r\nLEFT JOIN agg_cnd  ac ON ac.prod_date  = b.prod_date\r\nLEFT JOIN agg_qc   aq ON aq.prod_date  = b.prod_date\r\nGROUP BY b.prod_date\r\nORDER BY time",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "CYCLE TIME - MONTHLY AVG",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "ST-13"
+          ],
+          "value": [
+            "ST-13"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    [M/C No.] AS __text,\n    [M/C No.] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND TRIM([M/C No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${ct_mold:singlequote})                -- ✅ กรองตาม Mold No.\nORDER BY __value",
+        "includeAll": false,
+        "label": "M/C No.",
+        "multi": true,
+        "name": "ct_mc_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    [M/C No.] AS __text,\n    [M/C No.] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND TRIM([M/C No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${ct_mold:singlequote})                -- ✅ กรองตาม Mold No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "Jan"
+          ],
+          "value": [
+            "Jan"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    CASE LTRIM(RTRIM([Month Record]))                    -- ✅ __value เป็นชื่อเดือนด้วย\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __value\nFROM (\n    SELECT DISTINCT [Month Record]\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE LTRIM(RTRIM([Month Record])) != ''\n) AS t\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "label": "Month",
+        "multi": true,
+        "name": "ct_month",
+        "options": [],
+        "query": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    CASE LTRIM(RTRIM([Month Record]))                    -- ✅ __value เป็นชื่อเดือนด้วย\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __value\nFROM (\n    SELECT DISTINCT [Month Record]\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE LTRIM(RTRIM([Month Record])) != ''\n) AS t\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT TRIM([Year Record]) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY value",
+        "includeAll": false,
+        "label": "Year",
+        "multi": true,
+        "name": "ct_year",
+        "options": [],
+        "query": "SELECT DISTINCT TRIM([Year Record]) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "1079"
+          ],
+          "value": [
+            "1079"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Mold No.]) AS __text,\n    TRIM([Mold No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND TRIM([Mold No.]) NOT LIKE '0%'\n  AND LEN(TRIM([Mold No.])) > 1\n  AND [Judgement [S]]] = 'X'     -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "description": "",
+        "includeAll": false,
+        "label": "Mold No.",
+        "multi": true,
+        "name": "ct_mold",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Mold No.]) AS __text,\n    TRIM([Mold No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND TRIM([Mold No.]) NOT LIKE '0%'\n  AND LEN(TRIM([Mold No.])) > 1\n  AND [Judgement [S]]] = 'X'     -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "EH2300231P953"
+          ],
+          "value": [
+            "EH2300231P953"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Part No.]) AS __text,\n    TRIM([Part No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Part No.] IS NOT NULL\n  AND TRIM([Part No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${ct_mold:singlequote})                -- ✅ กรองตาม Mold No.\n  AND [M/C No.]        IN (${ct_mc_no:singlequote})               -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "label": "Part No.",
+        "multi": true,
+        "name": "ct_part_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Part No.]) AS __text,\n    TRIM([Part No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Part No.] IS NOT NULL\n  AND TRIM([Part No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${ct_mold:singlequote})                -- ✅ กรองตาม Mold No.\n  AND [M/C No.]        IN (${ct_mc_no:singlequote})               -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CYCLE TIME — MONTHLY AVG",
+  "uid": "bfnhn1lewqzuoe",
+  "version": 43,
+  "weekStart": ""
+}

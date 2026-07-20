@@ -1,0 +1,245 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 204,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 100
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": ";WITH unique_records AS (\r\n    SELECT DISTINCT\r\n        [Part Type],\r\n        [Identical ID],\r\n        [QC Member],\r\n        [Year Record],\r\n        [Month Record],\r\n        [File Run No.],\r\n        [Sequence],\r\n        [Status],\r\n        LTRIM(RTRIM([Material No.]))       AS material_clean,\r\n        LTRIM(RTRIM([Lot Material]))      AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))     AS condition_std,\r\n        LTRIM(RTRIM([M/C No.]))            AS mc_no,\r\n        LTRIM(RTRIM([Mold No.]))           AS mold_no,\r\n        LTRIM(RTRIM([QC Member]))         AS qc_member_val,\r\n        LTRIM(RTRIM([Production Date [S]]])) AS prod_date,\r\n        LTRIM(RTRIM([Production Time]))   AS prod_time\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Material No.] IS NOT NULL\r\n        AND LTRIM(RTRIM([Material No.])) != ''\r\n        AND CAST([Year Record] AS VARCHAR(10))\r\n                IN (${year:singlequote})\r\n        AND CASE CAST([Month Record] AS INT)\r\n                WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n            END IN (${month:singlequote})\r\n        AND (\r\n            LTRIM(RTRIM([Mold No.])) IN (${mold_no:singlequote})\r\n            OR 'All' IN (${mold_no:singlequote})\r\n        )\r\n),\r\n-- ✅ CTE นับ: เหมือน Query เดิม 100% — ไม่มี breakdown columns\r\nng_lot_for_count AS (\r\n    SELECT DISTINCT\r\n        [Identical ID],\r\n        [QC Member],\r\n        [Year Record],\r\n        [Month Record],\r\n        [File Run No.],\r\n        [Sequence],\r\n        material_clean\r\n    FROM unique_records\r\n    WHERE LTRIM(RTRIM([Status])) = 'NG'\r\n),\r\n-- ✅ นับ NG Lot Count เหมือนเดิม 100%\r\nng_count AS (\r\n    SELECT\r\n        material_clean,\r\n        COUNT(*) AS ng_lot_count\r\n    FROM ng_lot_for_count\r\n    GROUP BY material_clean\r\n),\r\n-- ✅ CTE breakdown: แยกออกมาต่างหาก ไม่กระทบการนับ\r\nng_lot_breakdown AS (\r\n    SELECT DISTINCT\r\n        material_clean,\r\n        lot_material,\r\n        condition_std,\r\n        mc_no,\r\n        mold_no,\r\n        qc_member_val,\r\n        prod_date + ' ' + prod_time AS prod_datetime\r\n    FROM unique_records\r\n    WHERE LTRIM(RTRIM([Status])) = 'NG'\r\n),\r\n-- ✅ DISTINCT แยกทีละ field กัน duplicate\r\nd_lot AS (\r\n    SELECT DISTINCT material_clean, lot_material\r\n    FROM ng_lot_breakdown\r\n),\r\nd_cond AS (\r\n    SELECT DISTINCT material_clean, condition_std\r\n    FROM ng_lot_breakdown\r\n),\r\nd_mc AS (\r\n    SELECT DISTINCT material_clean, mc_no\r\n    FROM ng_lot_breakdown\r\n),\r\nd_mold AS (\r\n    SELECT DISTINCT material_clean, mold_no\r\n    FROM ng_lot_breakdown\r\n),\r\nd_qc AS (\r\n    SELECT DISTINCT material_clean, qc_member_val\r\n    FROM ng_lot_breakdown\r\n),\r\n-- ✅ Production Date+Time ไม่ deduplicate คงไว้ทั้งหมด\r\nd_datetime AS (\r\n    SELECT DISTINCT material_clean, prod_datetime\r\n    FROM ng_lot_breakdown\r\n),\r\nagg_lot AS (\r\n    SELECT material_clean,\r\n           STRING_AGG(lot_material,  ' / ') AS lot_material_agg\r\n    FROM d_lot GROUP BY material_clean\r\n),\r\nagg_cond AS (\r\n    SELECT material_clean,\r\n           STRING_AGG(condition_std, ' / ') AS condition_std_agg\r\n    FROM d_cond GROUP BY material_clean\r\n),\r\nagg_mc AS (\r\n    SELECT material_clean,\r\n           STRING_AGG(mc_no,         ' / ') AS mc_no_agg\r\n    FROM d_mc GROUP BY material_clean\r\n),\r\nagg_mold AS (\r\n    SELECT material_clean,\r\n           STRING_AGG(mold_no,       ' / ') AS mold_no_agg\r\n    FROM d_mold GROUP BY material_clean\r\n),\r\nagg_qc AS (\r\n    SELECT material_clean,\r\n           STRING_AGG(qc_member_val, ' / ') AS qc_member_agg\r\n    FROM d_qc GROUP BY material_clean\r\n),\r\nagg_datetime AS (\r\n    SELECT material_clean,\r\n           STRING_AGG(prod_datetime, ' / ') AS prod_datetime_agg\r\n    FROM d_datetime GROUP BY material_clean\r\n)\r\nSELECT\r\n    nc.material_clean         AS [Material No.],\r\n    nc.ng_lot_count           AS [NG Lot Count],\r\n    al.lot_material_agg       AS [Lot Material],\r\n    ac.condition_std_agg      AS [Condition STD],\r\n    am.mc_no_agg              AS [M/C No.],\r\n    amo.mold_no_agg           AS [Mold No.],\r\n    aq.qc_member_agg          AS [QC Member],\r\n    adt.prod_datetime_agg     AS [Production Date + Time]\r\nFROM ng_count             AS nc\r\nLEFT JOIN agg_lot         AS al  ON al.material_clean  = nc.material_clean\r\nLEFT JOIN agg_cond        AS ac  ON ac.material_clean  = nc.material_clean\r\nLEFT JOIN agg_mc          AS am  ON am.material_clean  = nc.material_clean\r\nLEFT JOIN agg_mold        AS amo ON amo.material_clean = nc.material_clean\r\nLEFT JOIN agg_qc          AS aq  ON aq.material_clean  = nc.material_clean\r\nLEFT JOIN agg_datetime    AS adt ON adt.material_clean = nc.material_clean\r\nORDER BY nc.ng_lot_count DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "MATERIAL NG RATE COUNT BY LOT ",
+      "type": "barchart"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT CAST([Year Record] AS VARCHAR(10)) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY 1 DESC",
+        "label": "Year",
+        "multi": true,
+        "name": "year",
+        "options": [],
+        "query": "SELECT DISTINCT CAST([Year Record] AS VARCHAR(10)) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY 1 DESC",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec"
+          ],
+          "value": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May",
+            "Jun",
+            "Jul",
+            "Aug",
+            "Sep",
+            "Oct",
+            "Nov",
+            "Dec"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT value\nFROM (\n    SELECT DISTINCT\n        CASE CAST([Month Record] AS INT)\n            WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb'\n            WHEN 3  THEN 'Mar' WHEN 4  THEN 'Apr'\n            WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\n            WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug'\n            WHEN 9  THEN 'Sep' WHEN 10 THEN 'Oct'\n            WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\n        END AS value,\n        CAST([Month Record] AS INT) AS sort_order\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE [Month Record] IS NOT NULL\n) AS t\nORDER BY sort_order",
+        "label": "Month",
+        "multi": true,
+        "name": "month",
+        "options": [],
+        "query": "SELECT value\nFROM (\n    SELECT DISTINCT\n        CASE CAST([Month Record] AS INT)\n            WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb'\n            WHEN 3  THEN 'Mar' WHEN 4  THEN 'Apr'\n            WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\n            WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug'\n            WHEN 9  THEN 'Sep' WHEN 10 THEN 'Oct'\n            WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\n        END AS value,\n        CAST([Month Record] AS INT) AS sort_order\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE [Month Record] IS NOT NULL\n) AS t\nORDER BY sort_order",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "1079"
+          ],
+          "value": [
+            "1079"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    LTRIM(RTRIM([Mold No.])) AS __text,\n    LTRIM(RTRIM([Mold No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND LTRIM(RTRIM([Mold No.])) != ''\n  AND [Judgement [S]]] = 'X'    -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "label": "Mold No.",
+        "multi": true,
+        "name": "mold_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    LTRIM(RTRIM([Mold No.])) AS __text,\n    LTRIM(RTRIM([Mold No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND LTRIM(RTRIM([Mold No.])) != ''\n  AND [Judgement [S]]] = 'X'    -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MATERIAL NG COUNT BY LOT",
+  "uid": "bfo3tygy944cga",
+  "version": 32,
+  "weekStart": ""
+}

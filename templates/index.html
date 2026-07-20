@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dashboard Navigator — DigitalQC</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&display=swap');
+  * { font-family: 'Sarabun', sans-serif; }
+
+  .tab-active   { background: #1e40af; color: white; }
+  .tab-inactive { background: #1e293b; color: #94a3b8; }
+  .tab-inactive:hover { background: #1e3a5f; color: #cbd5e1; }
+  .chat-bubble-user { background:#1e40af; color:white; border-radius:18px 18px 4px 18px; }
+  .chat-bubble-ai   { background:#1e293b; color:#e2e8f0; border-radius:18px 18px 18px 4px; border:1px solid #334155; }
+  #chat-messages { scroll-behavior: smooth; }
+
+  .session-item { position: relative; display: flex; align-items: center; justify-content: space-between; transition: background 0.2s; }
+  .session-item:hover { background: #1e3a5f; }
+  .session-item.active { background: #1e40af; border-left: 3px solid #60a5fa; }
+
+  .typing-dot { display:inline-block; width:8px; height:8px; border-radius:50%; background:#60a5fa; animation:typing 1.2s infinite; }
+  .typing-dot:nth-child(2) { animation-delay:0.2s; }
+  .typing-dot:nth-child(3) { animation-delay:0.4s; }
+  @keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-8px)} }
+
+  .dash-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .dash-card { position: relative; display: flex; flex-direction: column; background: #1e293b; border: 1px solid #334155; border-radius: 12px; padding: 20px; transition: border-color 0.2s; }
+  .dash-card:hover { border-color: #3b82f6; }
+  .dash-card .card-body { flex: 1; }
+  .dash-card.is-open { border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; border-bottom-color: transparent !important; border-color: #3b82f6; }
+
+  .dash-btn { width: 100%; background: #1d4ed8; color: white; font-size: 13px; font-weight: 600; padding: 10px 16px; border-radius: 8px; display: flex; align-items: center; justify-content: space-between; }
+  .dash-btn:hover { background: #2563eb; }
+  .dash-btn.active { background: #1e40af !important; border-bottom-left-radius: 0 !important; border-bottom-right-radius: 0 !important; }
+
+  .chevron { transition: transform 0.3s ease; flex-shrink:0; }
+  .chevron.open { transform: rotate(180deg); }
+
+  .sub-panel { position: absolute; top: calc(100% + 0px); left: -1px; right: -1px; z-index: 50; background: #0f172a; border: 1px solid #3b82f6; border-top: none; border-bottom-left-radius: 12px; border-bottom-right-radius: 12px; max-height: 0; overflow: hidden; opacity: 0; transition: max-height 0.4s ease, opacity 0.3s ease; }
+  .sub-panel.open { max-height: 600px; opacity: 1; }
+
+  .sub-btn { position: relative; overflow: hidden; width: 100%; text-align: left; background: #0f172a; border: 1px solid #334155; border-radius: 8px; padding: 10px 12px; color: #e2e8f0; font-size: 12px; display: flex; align-items: center; gap: 8px; }
+  .sub-btn:hover { background: #1e3a8a; border-color: #3b82f6; }
+
+  .action-menu { position: absolute; z-index: 100; background: #1e293b; border: 1px solid #475569; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.5); width: 140px; display: none; }
+  .action-menu button { width: 100%; text-align: left; padding: 8px 12px; font-size: 13px; color: #e2e8f0; transition: background 0.15s; }
+  .action-menu button:hover { background: #334155; }
+  .action-menu button.delete-item { color: #f87171; }
+  .action-menu button.delete-item:hover { background: #7f1d1d; }
+
+  /* Retry / Edit / Copy */
+  .msg-actions { opacity: 0; transition: opacity 0.15s ease; display: flex; gap: 4px; margin-top: 4px; }
+  .user-msg-wrap:hover .msg-actions { opacity: 1; }
+  .msg-action-btn { background: #1e293b; border: 1px solid #334155; color: #94a3b8; width: 26px; height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 13px; cursor: pointer; transition: background 0.15s, color 0.15s; }
+  .msg-action-btn:hover { background: #334155; color: #e2e8f0; }
+
+  /* Edit Mode */
+  .edit-textarea { width: 100%; min-width: 240px; background: #0f172a; border: 1px solid #60a5fa; border-radius: 10px; color: #f1f5f9; font-family: 'Sarabun', sans-serif; font-size: 14px; padding: 10px 12px; resize: none; outline: none; line-height: 1.5; }
+  .edit-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 8px; }
+  .edit-btn { font-size: 12px; font-weight: 600; padding: 6px 14px; border-radius: 8px; cursor: pointer; transition: background 0.15s; border: none; }
+  .edit-btn.cancel { background: #334155; color: #cbd5e1; }
+  .edit-btn.cancel:hover { background: #475569; }
+  .edit-btn.resend { background: #2563eb; color: white; }
+  .edit-btn.resend:hover { background: #3b82f6; }
+
+  /* Timestamp bubble */
+  .msg-time { font-size: 10px; color: #64748b; margin-top: 3px; display: block; opacity: 0; transition: opacity 0.2s ease; }
+  .user-msg-wrap:hover .msg-time { opacity: 1; }
+  .ai-msg-wrap:hover   .msg-time { opacity: 1; }
+  .ts-tooltip { position: relative; display: inline-block; cursor: default; }
+  .ts-tooltip .ts-tip { visibility: hidden; opacity: 0; background: #0f172a; color: #94a3b8; border: 1px solid #334155; text-align: center; border-radius: 6px; padding: 4px 10px; font-size: 11px; white-space: nowrap; position: absolute; bottom: calc(100% + 6px); left: 50%; transform: translateX(-50%); transition: opacity 0.15s ease; z-index: 999; pointer-events: none; }
+  .ts-tooltip .ts-tip::after { content: ''; position: absolute; top: 100%; left: 50%; transform: translateX(-50%); border: 5px solid transparent; border-top-color: #334155; }
+  .ts-tooltip:hover .ts-tip { visibility: visible; opacity: 1; }
+
+  /* ===== Live Clock ===== */
+  .live-clock { display: flex; flex-direction: column; align-items: flex-start; line-height: 1.2; }
+  .clock-time { font-size: 14px; font-weight: 700; color: #e2e8f0; letter-spacing: 0.05em; font-variant-numeric: tabular-nums; }
+  .clock-date { font-size: 10px; font-weight: 400; color: #94a3b8; letter-spacing: 0.03em; }
+
+  /* ===== ✅ Timezone Dropdown ===== */
+  .tz-btn {
+    display: flex; align-items: center; gap: 6px;
+    background: #1e293b; border: 1px solid #334155;
+    border-radius: 10px; padding: 6px 10px;
+    cursor: pointer; transition: background 0.15s, border-color 0.15s;
+    user-select: none;
+  }
+  .tz-btn:hover { background: #334155; border-color: #475569; }
+  .tz-flag { width: 26px; height: 19px; border-radius: 3px; object-fit: cover; box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
+  .tz-chevron { font-size: 9px; color: #64748b; transition: transform 0.2s ease; }
+  .tz-chevron.open { transform: rotate(180deg); }
+
+  /* Dropdown container */
+  #tz-dropdown {
+    position: absolute; right: 0; top: calc(100% + 6px);
+    z-index: 200;
+    background: #1e293b; border: 1px solid #475569;
+    border-radius: 12px; box-shadow: 0 8px 24px rgba(0,0,0,0.6);
+    width: 250px; max-height: 340px; overflow-y: auto;
+    display: none;
+  }
+  #tz-dropdown.open { display: block; }
+
+  /* Scrollbar ของ dropdown */
+  #tz-dropdown::-webkit-scrollbar { width: 4px; }
+  #tz-dropdown::-webkit-scrollbar-track { background: #1e293b; }
+  #tz-dropdown::-webkit-scrollbar-thumb { background: #475569; border-radius: 2px; }
+
+  .tz-item {
+    width: 100%; display: flex; align-items: center; gap: 10px;
+    padding: 9px 14px; text-align: left; font-size: 13px;
+    color: #cbd5e1; background: transparent; border: none;
+    cursor: pointer; transition: background 0.12s;
+    border-bottom: 1px solid #334155;
+  }
+  .tz-item:last-child { border-bottom: none; }
+  .tz-item:hover { background: #334155; }
+  .tz-item.active { background: #1e3a8a; color: #93c5fd; }
+  .tz-item-flag { width: 22px; height: 16px; border-radius: 2px; object-fit: cover; flex-shrink: 0; box-shadow: 0 0 0 1px rgba(255,255,255,0.1); }
+  .tz-item-name { flex: 1; font-size: 12px; }
+  .tz-item-label { font-size: 10px; color: #64748b; flex-shrink: 0; }
+
+  /* Section header ใน dropdown */
+  .tz-section { padding: 6px 14px 3px; font-size: 10px; font-weight: 600;
+                color: #475569; letter-spacing: 0.08em; text-transform: uppercase;
+                border-bottom: 1px solid #334155; background: #0f172a; }
+</style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+<!-- ===== Header ===== -->
+<header class="bg-slate-800 border-b border-slate-700 px-6 py-3 flex items-center justify-between">
+  <div class="flex items-center gap-3">
+    <div class="w-9 h-9 bg-white rounded-lg flex items-center justify-center overflow-hidden p-0.5">
+      <img src="https://1000logos.net/wp-content/uploads/2017/04/Panasonic-logo.jpg" alt="Panasonic" class="w-full h-full object-contain">
+    </div>
+    <div>
+      <h1 class="font-bold text-lg leading-tight">Dashboard Navigator</h1>
+      <p class="text-xs text-slate-400">DigitalQC · Panasonic Manufacturing Thailand</p>
+    </div>
+  </div>
+
+  <!-- ===== ฝั่งขวา: Timezone Clock + Ollama ===== -->
+  <div class="flex items-center gap-4">
+
+    <!-- Timezone Clock Button + Dropdown -->
+    <div class="relative" id="tz-wrapper">
+
+      <!-- ปุ่มหลัก: กดเพื่อเปิด Dropdown -->
+      <button class="tz-btn" onclick="toggleTzDropdown()" id="tz-main-btn">
+  <!-- Flag image เปลี่ยนตาม Timezone ที่เลือก -->
+  <img class="tz-flag" id="clock-flag" src="https://flagcdn.com/w40/th.png" alt="TH">
+        <!-- Clock -->
+        <div class="live-clock">
+          <span class="clock-time" id="clock-time">00:00:00</span>
+          <span class="clock-date" id="clock-date">--/--/--</span>
+        </div>
+        <!-- ลูกศร -->
+        <span class="tz-chevron" id="tz-chevron">▼</span>
+      </button>
+
+      <!-- Dropdown List (สร้างโดย JavaScript) -->
+      <div id="tz-dropdown"></div>
+    </div>
+
+    <!-- Divider -->
+    <div class="w-px h-8 bg-slate-600"></div>
+
+    <!-- Ollama Status -->
+    <span class="text-xs bg-green-900 text-green-300 px-3 py-1 rounded-full border border-green-700">
+      🟢 Ollama Connected
+    </span>
+  </div>
+</header>
+
+<div class="bg-slate-800 border-b border-slate-700 px-6">
+  <div class="flex gap-2 pt-2">
+    <button onclick="switchTab('dashboard')" id="tab-dashboard" class="tab-active px-5 py-2 rounded-t-lg text-sm font-medium transition-all">📊 Dashboard</button>
+    <button onclick="switchTab('guidance')"  id="tab-guidance"  class="tab-inactive px-5 py-2 rounded-t-lg text-sm font-medium transition-all">🤖 AI Guidance</button>
+  </div>
+</div>
+
+<!-- Dashboard Tab -->
+<div id="page-dashboard" class="flex-1 p-6 overflow-y-auto">
+  <div class="max-w-5xl mx-auto">
+    <h2 class="text-xl font-semibold mb-1">เลือก Dashboard</h2>
+    <p class="text-slate-400 text-sm mb-6">คลิก <strong class="text-slate-300">"Dashboard"</strong> เพื่อเลือก Dashboard ที่ต้องการ</p>
+    <div class="dash-cols">
+      {% for db in dashboards %}
+        <div class="dash-card group" id="card-{{ db.id }}">
+          <div class="card-body">
+            <div class="flex items-start justify-between mb-3 cursor-pointer" onclick="window.open('{{ db.url }}', '_blank')">
+              <div class="flex items-center gap-3">
+                <span class="text-3xl">{{ db.icon }}</span>
+                <div>
+                  <h3 class="font-semibold text-base text-slate-100 group-hover:text-blue-400 transition-colors">{{ db.name }}</h3>
+                  <p class="text-slate-400 text-sm mt-0.5">{{ db.description }}</p>
+                </div>
+              </div>
+              <span class="text-slate-500 group-hover:text-blue-400 transition-colors text-xl mt-1">↗</span>
+            </div>
+            <div class="flex flex-wrap gap-1.5 mb-4">
+              {% for tag in db.tags %}
+              <span class="text-xs bg-slate-700 text-slate-300 px-2 py-0.5 rounded-full">{{ tag }}</span>
+              {% endfor %}
+            </div>
+          </div>
+          <button onclick="toggleSub('{{ db.id }}')" id="btn-{{ db.id }}" class="dash-btn">
+            <span>Dashboard</span>
+            <svg id="chev-{{ db.id }}" class="chevron w-4 h-4 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
+            </svg>
+          </button>
+          <div id="sub-{{ db.id }}" class="sub-panel">
+            <div class="p-2 space-y-1.5">
+              {% for sub in db.sub_dashboards %}
+              <button onclick="window.open('{{ sub.url }}','_blank')" class="sub-btn">
+                <span class="label flex items-center gap-2 w-full">
+                  <span class="text-base flex-shrink-0">{{ sub.icon }}</span>
+                  <span class="text-xs leading-tight">{{ sub.name }}</span>
+                  <span class="ml-auto text-slate-500 text-xs flex-shrink-0">↗</span>
+                </span>
+              </button>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+      {% endfor %}
+    </div>
+    <div class="mt-8 bg-slate-800 border border-slate-700 rounded-xl p-5">
+      <h3 class="font-semibold mb-4 flex items-center gap-2">💡 ไม่รู้จะใช้ Dashboard ไหน?</h3>
+      <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+        <div class="bg-slate-700 rounded-lg p-4"><p class="font-medium text-blue-400 mb-2">🔍 มีปัญหาคุณภาพ</p><p class="text-slate-300">ไปที่ <strong>D1 QC Overview</strong> → ดู NG Summary</p></div>
+        <div class="bg-slate-700 rounded-lg p-4"><p class="font-medium text-blue-400 mb-2">📐 ค่าวัดเกิน Spec</p><p class="text-slate-300">ไปที่ <strong>D2 SPC</strong> → ดู X̄ Chart</p></div>
+        <div class="bg-slate-700 rounded-lg p-4"><p class="font-medium text-blue-400 mb-2">🔎 ต้องการย้อนรอย</p><p class="text-slate-300">ไปที่ <strong>D4 Traceability</strong> → ใส่ Lot/ISC Code</p></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- AI Guidance Tab -->
+<div id="page-guidance" class="hidden flex-1 flex overflow-hidden" style="height: calc(100vh - 113px)">
+  <div class="w-64 bg-slate-800 border-r border-slate-700 flex flex-col relative">
+    <div class="p-3 border-b border-slate-700">
+      <button onclick="newSession()" class="w-full bg-blue-600 hover:bg-blue-500 text-white text-sm py-2 px-3 rounded-lg font-medium transition-colors flex items-center justify-center gap-2">
+        <span class="text-base">+</span> แชทใหม่
+      </button>
+    </div>
+    <div class="flex-1 overflow-y-auto p-2 space-y-1" id="session-list">
+      <p class="text-slate-500 text-xs px-2 py-1">กำลังโหลด...</p>
+    </div>
+    <div class="p-3 border-t border-slate-700">
+      <p class="text-xs text-slate-500 text-center">Memory บันทึกเป็น .md ไฟล์</p>
+    </div>
+    <div id="custom-action-menu" class="action-menu">
+      <button onclick="triggerStar()">⭐ Pin / Unpin</button>
+      <button onclick="triggerRename()">✏️ Rename</button>
+      <button onclick="triggerDeleteModal()" class="delete-item">🗑️ Delete</button>
+    </div>
+  </div>
+  <div class="flex-1 flex flex-col">
+    <div class="px-5 py-3 bg-slate-800 border-b border-slate-700">
+      <h3 class="font-medium text-sm" id="chat-title">เลือกหรือสร้างแชทใหม่</h3>
+      <p class="text-xs text-slate-400" id="chat-subtitle">AI ตอบจาก Business Logic เท่านั้น ไม่มีการ hallucinate</p>
+    </div>
+    <div class="flex-1 overflow-y-auto p-5 space-y-4" id="chat-messages">
+      <div class="text-center py-12" id="empty-state">
+        <div class="text-5xl mb-4">🤖</div>
+        <h3 class="font-semibold text-lg mb-2">AI Guidance พร้อมช่วยเหลือ</h3>
+      </div>
+    </div>
+    <div class="p-4 bg-slate-800 border-t border-slate-700">
+      <div class="flex gap-3 items-end">
+        <div class="flex-1 bg-slate-700 rounded-xl border border-slate-600 focus-within:border-blue-500 transition-colors">
+          <textarea id="user-input" rows="1" placeholder="ถามเกี่ยวกับ Dashboard หรือวิธีใช้งาน..." class="w-full bg-transparent px-4 py-3 text-sm resize-none outline-none text-slate-100 placeholder-slate-400" style="max-height:120px; min-height:44px;" onkeydown="handleKeydown(event)" oninput="autoResize(this)"></textarea>
+        </div>
+        <button onclick="sendMessage()" class="bg-blue-600 hover:bg-blue-500 text-white px-5 py-3 rounded-xl font-medium text-sm transition-colors">ส่ง</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Modal -->
+<div id="delete-modal" class="fixed inset-0 bg-black/70 flex items-center justify-center z-[200] hidden px-4">
+  <div class="bg-slate-800 border border-slate-700 w-full max-w-md rounded-2xl p-6 shadow-2xl">
+    <div class="flex items-center gap-3 text-red-400 mb-3"><span class="text-2xl">⚠️</span><h3 class="text-lg font-semibold text-slate-100">Delete Chat Confirmation</h3></div>
+    <p class="text-sm text-slate-300 leading-relaxed mb-6">คุณแน่ใจหรือไม่ว่าต้องการลบห้องแชทนี้? การดำเนินการนี้จะลบไฟล์บันทึกประวัติการสนทนา (<code class="text-xs bg-slate-900 px-1.5 py-0.5 rounded text-amber-400">.md</code>) อย่างถาวร และไม่สามารถกู้คืนได้</p>
+    <div class="flex justify-end gap-3">
+      <button onclick="closeDeleteModal()" class="px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-200 text-sm font-medium rounded-xl transition-colors">Cancel</button>
+      <button onclick="confirmDeleteChat()" class="px-4 py-2 bg-red-600 hover:bg-red-500 text-white text-sm font-medium rounded-xl transition-colors">🗑️ Delete Permanent</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// =====================================================
+// ✅ TIMEZONE DATA — ข้อมูลทุก Timezone ที่รองรับ
+// =====================================================
+const TIMEZONES = [
+  // --- เอเชีย ---
+  { section: '🌏 เอเชีย' },
+  { code:'th', name:'ไทย',                   tz:'Asia/Bangkok',                      label:'UTC+7',     buddhist:true  },
+  { code:'jp', name:'ญี่ปุ่น',               tz:'Asia/Tokyo',                        label:'UTC+9'                    },
+  { code:'kr', name:'เกาหลีใต้',             tz:'Asia/Seoul',                        label:'UTC+9'                    },
+  { code:'cn', name:'จีน',                   tz:'Asia/Shanghai',                     label:'UTC+8'                    },
+  { code:'sg', name:'สิงคโปร์',              tz:'Asia/Singapore',                    label:'UTC+8'                    },
+  { code:'my', name:'มาเลเซีย',              tz:'Asia/Kuala_Lumpur',                 label:'UTC+8'                    },
+  { code:'ph', name:'ฟิลิปปินส์',            tz:'Asia/Manila',                       label:'UTC+8'                    },
+  { code:'vn', name:'เวียดนาม',              tz:'Asia/Ho_Chi_Minh',                  label:'UTC+7'                    },
+  { code:'id', name:'อินโดนีเซีย (จาการ์ตา)',tz:'Asia/Jakarta',                      label:'UTC+7'                    },
+  { code:'in', name:'อินเดีย',               tz:'Asia/Kolkata',                      label:'UTC+5:30'                 },
+  { code:'pk', name:'ปากีสถาน',              tz:'Asia/Karachi',                      label:'UTC+5'                    },
+  { code:'ae', name:'UAE',                   tz:'Asia/Dubai',                        label:'UTC+4'                    },
+  { code:'sa', name:'ซาอุดีอาระเบีย',       tz:'Asia/Riyadh',                       label:'UTC+3'                    },
+  { code:'ir', name:'อิหร่าน',               tz:'Asia/Tehran',                       label:'UTC+3:30'                 },
+  { code:'il', name:'อิสราเอล',              tz:'Asia/Jerusalem',                    label:'UTC+2/+3'                 },
+  // --- ยุโรป ---
+  { section: '🇪🇺 ยุโรป' },
+  { code:'gb', name:'สหราชอาณาจักร',        tz:'Europe/London',                     label:'UTC+0/+1'                 },
+  { code:'fr', name:'ฝรั่งเศส',              tz:'Europe/Paris',                      label:'UTC+1/+2'                 },
+  { code:'de', name:'เยอรมนี',               tz:'Europe/Berlin',                     label:'UTC+1/+2'                 },
+  { code:'it', name:'อิตาลี',                tz:'Europe/Rome',                       label:'UTC+1/+2'                 },
+  { code:'es', name:'สเปน',                  tz:'Europe/Madrid',                     label:'UTC+1/+2'                 },
+  { code:'nl', name:'เนเธอร์แลนด์',         tz:'Europe/Amsterdam',                  label:'UTC+1/+2'                 },
+  { code:'ch', name:'สวิตเซอร์แลนด์',       tz:'Europe/Zurich',                     label:'UTC+1/+2'                 },
+  { code:'se', name:'สวีเดน',                tz:'Europe/Stockholm',                  label:'UTC+1/+2'                 },
+  { code:'gr', name:'กรีซ',                  tz:'Europe/Athens',                     label:'UTC+2/+3'                 },
+  { code:'ua', name:'ยูเครน',                tz:'Europe/Kiev',                       label:'UTC+2/+3'                 },
+  { code:'tr', name:'ตุรกี',                 tz:'Europe/Istanbul',                   label:'UTC+3'                    },
+  { code:'ru', name:'รัสเซีย (มอสโก)',       tz:'Europe/Moscow',                     label:'UTC+3'                    },
+  // --- อเมริกา ---
+  { section: '🇺🇸 อเมริกา' },
+  { code:'us', name:'สหรัฐฯ (นิวยอร์ก)',     tz:'America/New_York',                  label:'UTC-5/-4'                 },
+  { code:'us', name:'สหรัฐฯ (ลอสแอนเจลิส)', tz:'America/Los_Angeles',               label:'UTC-8/-7'                 },
+  { code:'ca', name:'แคนาดา (โตรอนโต)',      tz:'America/Toronto',                   label:'UTC-5/-4'                 },
+  { code:'mx', name:'เม็กซิโก',              tz:'America/Mexico_City',               label:'UTC-6'                    },
+  { code:'br', name:'บราซิล',                tz:'America/Sao_Paulo',                 label:'UTC-3'                    },
+  { code:'ar', name:'อาร์เจนตินา',           tz:'America/Argentina/Buenos_Aires',    label:'UTC-3'                    },
+  { code:'co', name:'โคลอมเบีย',             tz:'America/Bogota',                    label:'UTC-5'                    },
+  { code:'cl', name:'ชิลี',                  tz:'America/Santiago',                  label:'UTC-4/-3'                 },
+  { code:'cu', name:'คิวบา',                 tz:'America/Havana',                    label:'UTC-5/-4'                 },
+  // --- แอฟริกา ---
+  { section: '🌍 แอฟริกา' },
+  { code:'eg', name:'อียิปต์',               tz:'Africa/Cairo',                      label:'UTC+2/+3'                 },
+  { code:'za', name:'แอฟริกาใต้',            tz:'Africa/Johannesburg',               label:'UTC+2'                    },
+  { code:'ng', name:'ไนจีเรีย',              tz:'Africa/Lagos',                      label:'UTC+1'                    },
+  { code:'ke', name:'เคนยา',                 tz:'Africa/Nairobi',                    label:'UTC+3'                    },
+  { code:'ma', name:'โมร็อกโก',              tz:'Africa/Casablanca',                 label:'UTC+1'                    },
+  { code:'gh', name:'กานา',                  tz:'Africa/Accra',                      label:'UTC+0'                    },
+  // --- โอเชียเนีย ---
+  { section: '🐨 โอเชียเนีย' },
+  { code:'au', name:'ออสเตรเลีย (ซิดนีย์)', tz:'Australia/Sydney',                  label:'UTC+10/+11'               },
+  { code:'au', name:'ออสเตรเลีย (เพิร์ท)',  tz:'Australia/Perth',                   label:'UTC+8'                    },
+  { code:'nz', name:'นิวซีแลนด์',           tz:'Pacific/Auckland',                  label:'UTC+12/+13'               },
+  { code:'fj', name:'ฟิจิ',                  tz:'Pacific/Fiji',                      label:'UTC+12'                   },
+];
+
+// =====================================================
+// ✅ CLOCK STATE
+// =====================================================
+let selectedTZ = TIMEZONES.find(t => !t.section && t.buddhist) || TIMEZONES[1]; // เริ่มที่ไทย
+
+/**
+ * getTimeInZone(tz) — ดึงเวลาใน IANA Timezone ที่กำหนด
+ * ใช้ Intl.DateTimeFormat.formatToParts() ของ Browser
+ */
+function getTimeInZone(tz) {
+    const now = new Date();
+    const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: tz,
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit', second: '2-digit',
+        hour12: false
+    }).formatToParts(now);
+
+    const get = type => parts.find(p => p.type === type)?.value ?? '00';
+    let hh = get('hour');
+    if (hh === '24') hh = '00'; // แก้กรณี Intl คืน '24' แทน '00'
+
+    return {
+        year:  parseInt(get('year')),
+        month: parseInt(get('month')),
+        day:   parseInt(get('day')),
+        hh, mm: get('minute'), ss: get('second')
+    };
+}
+
+/**
+ * tickClock() — อัปเดต Clock ทุก 1 วินาที
+ * ใช้ selectedTZ ที่เลือกอยู่ปัจจุบัน
+ */
+function tickClock() {
+    const t = getTimeInZone(selectedTZ.tz);
+
+    // เวลา HH:MM:SS
+    document.getElementById('clock-time').textContent = `${t.hh}:${t.mm}:${t.ss}`;
+
+    // วันที่ DD/MM/YY
+    const dd = String(t.day).padStart(2, '0');
+    const mo = String(t.month).padStart(2, '0');
+    const yy = selectedTZ.buddhist
+        ? String(t.year + 543).slice(-2)   // ไทย → พ.ศ. 2 หลักท้าย
+        : String(t.year).slice(-2);         // ประเทศอื่น → ค.ศ. 2 หลักท้าย
+
+    document.getElementById('clock-date').textContent = `${dd}/${mo}/${yy}`;
+
+    // Flag ใน Header (เปลี่ยนเป็นรูปภาพจาก flagcdn)
+    const flagEl = document.getElementById('clock-flag');
+    const newSrc = `https://flagcdn.com/w40/${selectedTZ.code}.png`;
+    if (flagEl.src !== newSrc) flagEl.src = newSrc;   // set เฉพาะตอนเปลี่ยนจริง กัน flicker
+    flagEl.alt = selectedTZ.code.toUpperCase();
+}
+
+// เริ่ม Clock ทันที + เดินทุก 1 วินาที
+tickClock();
+setInterval(tickClock, 1000);
+
+// =====================================================
+// ✅ TIMEZONE DROPDOWN
+// =====================================================
+
+/** สร้าง HTML ของรายการ Timezone ใน Dropdown */
+function buildTzDropdown() {
+    const dd = document.getElementById('tz-dropdown');
+    let html = '';
+
+    TIMEZONES.forEach((item, i) => {
+        if (item.section) {
+            // Section Header (ไม่ใช่ Timezone จริง)
+            html += `<div class="tz-section">${item.section}</div>`;
+        } else {
+            const isActive = item.tz === selectedTZ.tz;
+            html += `
+                <button class="tz-item ${isActive ? 'active' : ''}"
+                        onclick="selectTimezone(${i})">
+                    <img class="tz-item-flag" src="https://flagcdn.com/w40/${item.code}.png" alt="${item.code.toUpperCase()}" loading="lazy">
+                    <span class="tz-item-name">${item.name}</span>
+                    <span class="tz-item-label">${item.label}</span>
+                </button>`;
+        }
+    });
+
+    dd.innerHTML = html;
+}
+
+/** เปิด/ปิด Dropdown */
+function toggleTzDropdown() {
+    const dd   = document.getElementById('tz-dropdown');
+    const chev = document.getElementById('tz-chevron');
+    const isOpen = dd.classList.contains('open');
+
+    if (isOpen) {
+        dd.classList.remove('open');
+        chev.classList.remove('open');
+    } else {
+        buildTzDropdown();       // สร้างรายการใหม่ (highlight ตัวปัจจุบัน)
+        dd.classList.add('open');
+        chev.classList.add('open');
+
+        // Scroll ไปยัง Timezone ที่เลือกอยู่
+        setTimeout(() => {
+            const activeItem = dd.querySelector('.tz-item.active');
+            if (activeItem) activeItem.scrollIntoView({ block: 'nearest' });
+        }, 50);
+    }
+}
+
+/** เลือก Timezone ใหม่ */
+function selectTimezone(index) {
+    const item = TIMEZONES[index];
+    if (!item || item.section) return;  // ข้าม Section Header
+
+    selectedTZ = item;
+
+    // ปิด Dropdown
+    document.getElementById('tz-dropdown').classList.remove('open');
+    document.getElementById('tz-chevron').classList.remove('open');
+
+    // อัปเดต Clock ทันที
+    tickClock();
+}
+
+/** ปิด Dropdown เมื่อคลิกที่อื่นนอก Wrapper */
+document.addEventListener('click', (e) => {
+    const wrapper = document.getElementById('tz-wrapper');
+    if (wrapper && !wrapper.contains(e.target)) {
+        document.getElementById('tz-dropdown')?.classList.remove('open');
+        document.getElementById('tz-chevron')?.classList.remove('open');
+    }
+});
+
+// =====================================================
+// Timestamp helpers (Chat Bubble)
+// =====================================================
+function pad2(n) { return String(n).padStart(2, '0'); }
+function formatShortTime(isoStr) {
+    if (!isoStr) return '';
+    try { const d = new Date(isoStr); return `${pad2(d.getHours())}:${pad2(d.getMinutes())}`; }
+    catch { return ''; }
+}
+function formatFullTime(isoStr) {
+    if (!isoStr) return '';
+    try { return new Date(isoStr).toLocaleString('en-US', { month:'short', day:'numeric', year:'numeric', hour:'numeric', minute:'2-digit', hour12:true }); }
+    catch { return ''; }
+}
+function buildTimestampHTML(isoStr, alignRight = false) {
+    if (!isoStr) return '';
+    const short = formatShortTime(isoStr), full = formatFullTime(isoStr);
+    return `<span class="msg-time ${alignRight?'text-right':'text-left'}"><span class="ts-tooltip">${short}<span class="ts-tip">${full}</span></span></span>`;
+}
+
+// =====================================================
+// Tab / Panel
+// =====================================================
+let activeId = null;
+function switchTab(tab) {
+    ['page-dashboard','page-guidance'].forEach(id => document.getElementById(id).classList.add('hidden'));
+    ['tab-dashboard','tab-guidance'].forEach(id => document.getElementById(id).className='tab-inactive px-5 py-2 rounded-t-lg text-sm font-medium transition-all');
+    if (tab === 'dashboard') {
+        document.getElementById('page-dashboard').classList.remove('hidden');
+        document.getElementById('tab-dashboard').className='tab-active px-5 py-2 rounded-t-lg text-sm font-medium transition-all';
+    } else {
+        document.getElementById('page-guidance').classList.remove('hidden');
+        document.getElementById('tab-guidance').className='tab-active px-5 py-2 rounded-t-lg text-sm font-medium transition-all';
+        loadSessions();
+    }
+}
+function closePanel(id) {
+    document.getElementById('sub-'+id)?.classList.remove('open');
+    document.getElementById('chev-'+id)?.classList.remove('open');
+    document.getElementById('btn-'+id)?.classList.remove('active');
+    document.getElementById('card-'+id)?.classList.remove('is-open');
+}
+function toggleSub(id) {
+    const panel = document.getElementById('sub-'+id);
+    const isOpen = panel.classList.contains('open');
+    if (activeId) { closePanel(activeId); activeId = null; }
+    if (!isOpen) {
+        panel.classList.add('open');
+        document.getElementById('chev-'+id).classList.add('open');
+        document.getElementById('btn-'+id).classList.add('active');
+        document.getElementById('card-'+id).classList.add('is-open');
+        activeId = id;
+    }
+}
+
+// =====================================================
+// Sessions
+// =====================================================
+let currentSessionId = null, isLoading = false, selectedSessionContextId = null;
+
+async function loadSessions() {
+    const res = await fetch('/api/sessions');
+    const sessions = await res.json();
+    const list = document.getElementById('session-list');
+    if (!sessions.length) { list.innerHTML = '<p class="text-slate-500 text-xs px-2 py-1">ยังไม่มีประวัติแชท</p>'; return; }
+    list.innerHTML = sessions.map(s => `
+        <div class="session-item px-3 py-2 rounded-lg cursor-pointer transition-colors ${s.id===currentSessionId?'active':''}" onclick="loadSession('${s.id}')">
+            <div class="truncate pr-2 flex-1">
+                <p class="text-sm font-medium truncate">${s.is_starred?'⭐ ':''}${s.title}</p>
+                <p class="text-xs text-slate-500 mt-0.5">${s.updated_at}</p>
+            </div>
+            <button class="w-8 h-8 flex items-center justify-center text-slate-400 hover:text-white rounded-full hover:bg-slate-700/50 text-xs font-bold"
+                    onclick="openContextMenu(event,'${s.id}',${s.is_starred})">•••</button>
+        </div>`).join('');
+}
+
+let isMenuStarredState = false;
+function openContextMenu(event, sessionId, isStarred) {
+    event.stopPropagation();
+    selectedSessionContextId = sessionId; isMenuStarredState = isStarred;
+    const menu = document.getElementById('custom-action-menu');
+    menu.style.display = 'block';
+    const rect = event.currentTarget.getBoundingClientRect();
+    const parentRect = event.currentTarget.offsetParent.getBoundingClientRect();
+    menu.style.top  = (rect.bottom - parentRect.top + 5) + 'px';
+    menu.style.left = (rect.left - parentRect.left - 100) + 'px';
+}
+document.addEventListener('click', (e) => {
+    if (!document.getElementById('tz-wrapper')?.contains(e.target))
+        document.getElementById('custom-action-menu').style.display = 'none';
+});
+async function triggerStar() {
+    if (!selectedSessionContextId) return;
+    await fetch(`/api/sessions/${selectedSessionContextId}/star`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({is_starred:!isMenuStarredState}) });
+    await loadSessions();
+}
+async function triggerRename() {
+    if (!selectedSessionContextId) return;
+    const t = prompt("กรุณากรอกชื่อเรื่องแชทใหม่:");
+    if (!t?.trim()) return;
+    await fetch(`/api/sessions/${selectedSessionContextId}/rename`, { method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title:t.trim()}) });
+    if (selectedSessionContextId === currentSessionId) document.getElementById('chat-title').textContent = t;
+    await loadSessions();
+}
+function triggerDeleteModal() { if (selectedSessionContextId) document.getElementById('delete-modal').classList.remove('hidden'); }
+function closeDeleteModal() { document.getElementById('delete-modal').classList.add('hidden'); }
+async function confirmDeleteChat() {
+    if (!selectedSessionContextId) return;
+    await fetch(`/api/sessions/${selectedSessionContextId}`, {method:'DELETE'});
+    if (selectedSessionContextId === currentSessionId) { currentSessionId = null; clearChat(true); }
+    closeDeleteModal(); selectedSessionContextId = null;
+    await loadSessions();
+}
+async function newSession() {
+    const res = await fetch('/api/sessions', {method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({title:'New Chat'})});
+    const s = await res.json();
+    currentSessionId = s.id; clearChat(true); await loadSessions();
+}
+async function loadSession(id) {
+    currentSessionId = id;
+    const res = await fetch(`/api/sessions/${id}`);
+    const s = await res.json();
+    clearChat(false);
+    document.getElementById('chat-title').textContent = (s.is_starred?'⭐ ':'')+s.title;
+    const c = document.getElementById('chat-messages');
+    if (s.messages.length > 0) {
+        document.getElementById('empty-state')?.classList.add('hidden');
+        s.messages.forEach(m => appendMsg(m.role, m.content, false, m.timestamp||null));
+        c.scrollTop = c.scrollHeight;
+    }
+    await loadSessions();
+}
+
+// =====================================================
+// Chat UI
+// =====================================================
+let messageIndexCounter = 0;
+function clearChat(showGreeting = true) {
+    messageIndexCounter = 0;
+    const c = document.getElementById('chat-messages');
+    c.innerHTML = `<div class="text-center py-12" id="empty-state"><div class="text-5xl mb-4">🤖</div><h3 class="font-semibold text-lg mb-2">AI Guidance พร้อมช่วยเหลือ</h3></div>`;
+    document.getElementById('chat-title').textContent = 'แชทใหม่';
+    if (showGreeting) appendMsg('assistant', 'สวัสดีครับ! ยินดีต้อนรับสู่ระบบ AI Guidance ของ DigitalQC 🤖\nวันนี้มีแดชบอร์ดจุดไหน หรือเคส NG ตัวไหนที่อยากให้ช่วยตรวจสอบข้อมูลไหมครับ?', false, new Date().toISOString());
+}
+function appendMsg(role, content, scroll=true, ts=null) {
+    const c = document.getElementById('chat-messages');
+    document.getElementById('empty-state')?.classList.add('hidden');
+    const d = document.createElement('div');
+    const fmt = content.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>');
+    d.classList.add('msg-row'); d.dataset.idx = messageIndexCounter++;
+    if (role === 'user') {
+        d.classList.add('flex','justify-end');
+        d.innerHTML = `<div class="user-msg-wrap flex flex-col items-end max-w-[80%]"><div class="chat-bubble-user px-4 py-3 text-sm" data-raw="${encodeURIComponent(content)}"><div>${fmt}</div></div>${buildTimestampHTML(ts,true)}<div class="msg-actions"><button class="msg-action-btn" title="Retry" onclick="retryMessage(this)">⟳</button><button class="msg-action-btn" title="Edit" onclick="editMessage(this)">✎</button><button class="msg-action-btn" title="Copy" onclick="copyMessage(this)">⧉</button></div></div>`;
+    } else {
+        d.classList.add('flex','justify-start');
+        d.innerHTML = `<div class="ai-msg-wrap flex flex-col items-start max-w-[80%]"><div class="chat-bubble-ai px-4 py-3 text-sm"><span class="text-xs text-slate-400 block mb-1">🤖 AI Guidance</span><div class="ai-stream-content">${fmt}</div></div>${buildTimestampHTML(ts,false)}</div>`;
+    }
+    c.appendChild(d);
+    if (scroll) c.scrollTop = c.scrollHeight;
+}
+
+// Retry / Edit / Copy
+function removeRowAndAfter(rowDiv) { let n = rowDiv; while(n){ const nx=n.nextElementSibling; n.remove(); n=nx; } }
+async function truncateSessionAt(k) { if (!currentSessionId) return; await fetch(`/api/sessions/${currentSessionId}/truncate`, {method:'PUT', headers:{'Content-Type':'application/json'}, body: JSON.stringify({keep_count:k})}); }
+function getRaw(btn) { return decodeURIComponent(btn.closest('.user-msg-wrap').querySelector('[data-raw]').dataset.raw); }
+async function retryMessage(btn) {
+    if (isLoading) return;
+    const text = getRaw(btn), row = btn.closest('.msg-row'), k = parseInt(row.dataset.idx);
+    removeRowAndAfter(row); await truncateSessionAt(k);
+    document.getElementById('user-input').value = text; await sendMessage();
+}
+function editMessage(btn) {
+    const wrap = btn.closest('.user-msg-wrap'), bubble = wrap.querySelector('.chat-bubble-user');
+    const acts = wrap.querySelector('.msg-actions'), raw = decodeURIComponent(bubble.dataset.raw);
+    acts.style.display = 'none'; bubble.innerHTML = '';
+    const ta = document.createElement('textarea');
+    ta.className = 'edit-textarea'; ta.value = raw; ta.rows = 2;
+    const ar = document.createElement('div'); ar.className = 'edit-actions';
+    ar.innerHTML = `<button class="edit-btn cancel" onclick="cancelEdit(this)">ยกเลิก</button><button class="edit-btn resend" onclick="resendEdit(this)">ส่งใหม่</button>`;
+    bubble.appendChild(ta); bubble.appendChild(ar);
+    ta.style.height = 'auto'; ta.style.height = ta.scrollHeight+'px';
+    ta.addEventListener('input', () => { ta.style.height='auto'; ta.style.height=ta.scrollHeight+'px'; });
+    ta.focus(); ta.setSelectionRange(ta.value.length, ta.value.length);
+}
+function cancelEdit(btn) {
+    const bubble = btn.closest('.chat-bubble-user'), wrap = bubble.closest('.user-msg-wrap');
+    const raw = decodeURIComponent(bubble.dataset.raw);
+    bubble.innerHTML = `<div>${raw.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>')}</div>`;
+    wrap.querySelector('.msg-actions').style.display = '';
+}
+async function resendEdit(btn) {
+    if (isLoading) return;
+    const bubble = btn.closest('.chat-bubble-user'), ta = bubble.querySelector('textarea');
+    const newText = ta.value.trim(); if (!newText) return;
+    const row = bubble.closest('.msg-row'), k = parseInt(row.dataset.idx);
+    removeRowAndAfter(row); await truncateSessionAt(k);
+    document.getElementById('user-input').value = newText; await sendMessage();
+}
+function copyMessage(btn) {
+    navigator.clipboard.writeText(getRaw(btn)).then(() => { const o = btn.textContent; btn.textContent='✓'; setTimeout(()=>{btn.textContent=o;},1200); });
+}
+
+// Typing indicator
+function showTyping() {
+    const c = document.getElementById('chat-messages'), d = document.createElement('div');
+    d.id='typing-indicator'; d.className='flex justify-start';
+    d.innerHTML=`<div class="chat-bubble-ai px-5 py-3"><span class="text-xs text-slate-400 block mb-2">🤖 AI กำลังคิด...</span><div class="flex gap-1.5"><span class="typing-dot"></span><span class="typing-dot"></span><span class="typing-dot"></span></div></div>`;
+    c.appendChild(d); c.scrollTop=c.scrollHeight;
+}
+function removeTyping() { document.getElementById('typing-indicator')?.remove(); }
+
+// sendMessage
+async function sendMessage() {
+    if (isLoading) return;
+    if (!currentSessionId) await newSession();
+    const inp = document.getElementById('user-input');
+    const msg = inp.value.trim(); if (!msg) return;
+    inp.value = ''; inp.style.height = 'auto'; isLoading = true;
+    const userTs = new Date().toISOString();
+    appendMsg('user', msg, true, userTs); showTyping();
+    try {
+        const res = await fetch('/api/chat', { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify({session_id:currentSessionId, message:msg, timestamp:userTs}) });
+        removeTyping();
+        const c = document.getElementById('chat-messages');
+        const ad = document.createElement('div');
+        ad.classList.add('msg-row'); ad.dataset.idx = messageIndexCounter++; ad.classList.add('flex','justify-start');
+        ad.innerHTML = `<div class="ai-msg-wrap flex flex-col items-start max-w-[80%]"><div class="chat-bubble-ai px-4 py-3 text-sm"><span class="text-xs text-slate-400 block mb-1">🤖 AI Guidance</span><div class="ai-stream-content"></div></div><span class="msg-time text-left" id="ai-ts-pending"></span></div>`;
+        c.appendChild(ad);
+        const sc = ad.querySelector('.ai-stream-content');
+        const reader = res.body.getReader(), dec = new TextDecoder(); let full = '';
+        while (true) {
+            const {done, value} = await reader.read(); if (done) break;
+            for (const line of dec.decode(value).split('\n')) {
+                if (!line.startsWith('data: ')) continue;
+                try {
+                    const data = JSON.parse(line.slice(6));
+                    if (data.chunk) { full+=data.chunk; sc.innerHTML=full.replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>').replace(/\n/g,'<br>'); c.scrollTop=c.scrollHeight; }
+                    if (data.done && data.title) {
+                        document.getElementById('chat-title').textContent = data.title;
+                        const aiTs = data.ai_timestamp || new Date().toISOString();
+                        const tp = ad.querySelector('#ai-ts-pending');
+                        if (tp) { tp.removeAttribute('id'); tp.innerHTML=`<span class="ts-tooltip">${formatShortTime(aiTs)}<span class="ts-tip">${formatFullTime(aiTs)}</span></span>`; }
+                        await loadSessions();
+                    }
+                } catch(e) {}
+            }
+        }
+    } catch(err) { removeTyping(); appendMsg('assistant','❌ ไม่สามารถเชื่อมต่อ Ollama ได้', true, new Date().toISOString()); }
+    isLoading = false;
+}
+
+function handleKeydown(e) { if (e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); } }
+function autoResize(el) { el.style.height='auto'; el.style.height=Math.min(el.scrollHeight,120)+'px'; }
+loadSessions();
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 212,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-GrYlRd"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          },
+          "unit": "percent"
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Mold No."
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "none"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NG Rate (%)"
+            },
+            "properties": []
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 13,
+        "w": 19,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "colorByField": "NG Rate (%)",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "always",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": ";WITH unique_records AS (\r\n    SELECT DISTINCT\r\n        [Part Type],\r\n        [Identical ID],\r\n        [QC Member],\r\n        [Year Record],\r\n        [Month Record],\r\n        [File Run No.],\r\n        [Sequence],\r\n        LTRIM(RTRIM([Status]))       AS status_clean,\r\n        LTRIM(RTRIM([Material No.])) AS material_clean,\r\n        LTRIM(RTRIM([M/C No.]))      AS mc_clean,\r\n        -- ✅ ลบ % ทุกตัวออก ไม่ว่าจะอยู่ตำแหน่งไหน\r\n        LTRIM(RTRIM(\r\n            REPLACE(LTRIM(RTRIM([Mold No.])), '%', '')\r\n        ))                           AS mold_clean\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [M/C No.] IS NOT NULL\r\n        AND LTRIM(RTRIM([M/C No.])) != ''\r\n        AND LTRIM(RTRIM([Year Record]))\r\n                IN (${year:singlequote})\r\n        AND CAST(LTRIM(RTRIM([Month Record])) AS VARCHAR(2))\r\n                IN (${month:singlequote})\r\n),\r\nall_lots AS (\r\n    SELECT DISTINCT\r\n        mc_clean,\r\n        mold_clean,\r\n        [Identical ID], [QC Member],\r\n        [Year Record],  [Month Record],\r\n        [File Run No.],  [Sequence]\r\n    FROM unique_records\r\n),\r\nng_lots AS (\r\n    SELECT DISTINCT\r\n        mc_clean,\r\n        mold_clean,\r\n        [Identical ID], [QC Member],\r\n        [Year Record],  [Month Record],\r\n        [File Run No.],  [Sequence]\r\n    FROM unique_records\r\n    WHERE status_clean = 'NG'\r\n),\r\nsummary AS (\r\n    SELECT\r\n        a.mc_clean,\r\n        COUNT(*)          AS total_lot,\r\n        COUNT(n.mc_clean) AS ng_lot\r\n    FROM all_lots a\r\n    LEFT JOIN ng_lots n\r\n           ON a.mc_clean        = n.mc_clean\r\n          AND a.[Identical ID]  = n.[Identical ID]\r\n          AND a.[QC Member]     = n.[QC Member]\r\n          AND a.[Year Record]   = n.[Year Record]\r\n          AND a.[Month Record]  = n.[Month Record]\r\n          AND a.[File Run No.]  = n.[File Run No.]\r\n          AND a.[Sequence]      = n.[Sequence]\r\n    GROUP BY a.mc_clean\r\n),\r\ndistinct_mold AS (\r\n    SELECT DISTINCT mc_clean, mold_clean\r\n    FROM ng_lots\r\n),\r\nmold_agg AS (\r\n    SELECT\r\n        mc_clean,\r\n        STRING_AGG(mold_clean, ' / ') AS mold_list\r\n    FROM distinct_mold\r\n    GROUP BY mc_clean\r\n)\r\nSELECT\r\n    s.mc_clean                            AS [M/C No.],\r\n    CAST(\r\n        s.ng_lot * 100.0 / NULLIF(s.total_lot, 0)\r\n    AS DECIMAL(5,1))                      AS [NG Rate (%)],\r\n    m.mold_list                           AS [Mold No.]\r\nFROM summary s\r\nLEFT JOIN mold_agg m ON m.mc_clean = s.mc_clean\r\nWHERE s.ng_lot > 0\r\nORDER BY [NG Rate (%)] DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "MACHINE NG LOT RATE BY M/C",
+      "type": "barchart"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "Jan"
+          ],
+          "value": [
+            "1"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    LTRIM(RTRIM([Month Record])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE LTRIM(RTRIM([Month Record])) != ''\nORDER BY __value",
+        "label": "Month",
+        "multi": true,
+        "name": "month",
+        "options": [],
+        "query": "SELECT DISTINCT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    LTRIM(RTRIM([Month Record])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE LTRIM(RTRIM([Month Record])) != ''\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT [Year Record] AS __text, [Year Record] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL AND LTRIM(RTRIM([Year Record])) != ''\nORDER BY [Year Record];",
+        "label": "Year",
+        "multi": true,
+        "name": "year",
+        "options": [],
+        "query": "SELECT DISTINCT [Year Record] AS __text, [Year Record] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL AND LTRIM(RTRIM([Year Record])) != ''\nORDER BY [Year Record];",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "MACHINE NG LOT RATE BY M/C",
+  "uid": "bfovawrjiuh34e",
+  "version": 12,
+  "weekStart": ""
+}

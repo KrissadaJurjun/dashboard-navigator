@@ -1,0 +1,532 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 208,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "opacity",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "smooth",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 2,
+            "pointSize": 8,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "always",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "avg_humid_line"
+            },
+            "properties": [
+              {
+                "id": "unit",
+                "value": "humidity"
+              },
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.drawStyle",
+                "value": "line"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 3
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "avg_temp_line"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "auto"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ng_temp_marker"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "celsius"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 10
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "ng_humid_marker"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "#821ae5",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "unit",
+                "value": "humidity"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 10
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 15,
+        "w": 22,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "links": [
+        {
+          "targetBlank": true,
+          "title": "",
+          "url": ""
+        }
+      ],
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH NgTime AS (\r\n    SELECT\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS dt,\r\n        MAX(CASE WHEN LTRIM(RTRIM(UPPER([Judgement [S]]]))) = 'X'\r\n                 THEN TRY_CONVERT(TIME, [Production Time]) END) AS ng_time\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE [Part Type] = 'Injection'\r\n      AND [Production Date [S]]] IS NOT NULL\r\n      AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n    GROUP BY TRY_CONVERT(DATE, [Production Date [S]]])\r\n),\r\ndaily_data AS (\r\n    SELECT\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS dt,\r\n        AVG(TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT)) AS room_temp,\r\n        AVG(TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT)) AS room_humid,\r\n        MAX(LTRIM(RTRIM([Part Name])))        AS [Part Name],\r\n        MAX(LTRIM(RTRIM([Material No.])))     AS [Material No.],\r\n        MAX(LTRIM(RTRIM([OI No.])))           AS [OI No.],\r\n        MAX(LTRIM(RTRIM([Sample Part No.])))  AS [Sample Part No.],\r\n        MAX(LTRIM(RTRIM([Lot Material])))     AS [Lot Material],\r\n        MAX(LTRIM(RTRIM([Condition STD])))    AS [Condition STD],\r\n        MAX(LTRIM(RTRIM([QC Member])))        AS [QC Member]\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT) IS NOT NULL\r\n        AND (\r\n            '${rh_month:csv}' = 'All'\r\n            OR CASE CAST(LTRIM(RTRIM([Month Record])) AS INT)\r\n                    WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                    WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                    WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                    WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n               END IN (${rh_month:singlequote})\r\n        )\r\n        AND ('${rh_year:csv}'    = 'All' OR LTRIM(RTRIM([Year Record])) IN (${rh_year:singlequote}))\r\n        AND ('${rh_mold:csv}'    = 'All' OR LTRIM(RTRIM([Mold No.]))    IN (${rh_mold:singlequote}))\r\n        AND ('${rh_mc_no:csv}'   = 'All' OR LTRIM(RTRIM([M/C No.]))     IN (${rh_mc_no:singlequote}))\r\n        AND ('${rh_part_no:csv}' = 'All' OR LTRIM(RTRIM([Part No.]))    IN (${rh_part_no:singlequote}))\r\n    GROUP BY TRY_CONVERT(DATE, [Production Date [S]]])\r\n)\r\nSELECT\r\n    CASE\r\n        WHEN ng.ng_time IS NOT NULL\r\n        THEN CAST(CAST(d.dt AS DATETIME) + CAST(ng.ng_time AS DATETIME) AS DATETIME)\r\n        ELSE CAST(d.dt AS DATETIME)\r\n    END           AS time,\r\n    d.room_temp,\r\n    d.room_humid,\r\n    d.[Part Name],\r\n    d.[Material No.],\r\n    d.[OI No.],\r\n    d.[Sample Part No.],\r\n    d.[Lot Material],\r\n    d.[Condition STD],\r\n    d.[QC Member]\r\nFROM daily_data AS d\r\nLEFT JOIN NgTime AS ng ON ng.dt = d.dt\r\nORDER BY time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        },
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\r\n    SELECT\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS dt,\r\n        TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT) AS temp_val,\r\n        TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT) AS humid_val,\r\n        TRY_CONVERT(TIME, [Production Time])              AS prod_time,\r\n        LTRIM(RTRIM(UPPER([Judgement [S]]])))             AS judg,\r\n        LTRIM(RTRIM([Part Name]))        AS part_name,\r\n        LTRIM(RTRIM([Material No.]))     AS material_no,\r\n        LTRIM(RTRIM([OI No.]))           AS oi_no,\r\n        LTRIM(RTRIM([Sample Part No.])) AS sample_part_no,\r\n        LTRIM(RTRIM([Lot Material]))     AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))    AS condition_std,\r\n        LTRIM(RTRIM([QC Member]))        AS qc_member\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT) IS NOT NULL\r\n        AND (\r\n            '${rh_month:csv}' = 'All'\r\n            OR CASE CAST(LTRIM(RTRIM([Month Record])) AS INT)\r\n                    WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                    WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                    WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                    WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n               END IN (${rh_month:singlequote})\r\n        )\r\n        AND ('${rh_year:csv}'    = 'All' OR LTRIM(RTRIM([Year Record])) IN (${rh_year:singlequote}))\r\n        AND ('${rh_mold:csv}'    = 'All' OR LTRIM(RTRIM([Mold No.]))    IN (${rh_mold:singlequote}))\r\n        AND ('${rh_mc_no:csv}'   = 'All' OR LTRIM(RTRIM([M/C No.]))     IN (${rh_mc_no:singlequote}))\r\n        AND ('${rh_part_no:csv}' = 'All' OR LTRIM(RTRIM([Part No.]))    IN (${rh_part_no:singlequote}))\r\n),\r\nng_only AS (\r\n    SELECT dt, prod_time FROM base WHERE judg = 'X'\r\n)\r\nSELECT\r\n    CAST(\r\n        CAST((SELECT MIN(dt) FROM ng_only) AS DATETIME)\r\n        + CAST((SELECT TOP 1 prod_time FROM ng_only ORDER BY dt ASC, prod_time ASC) AS DATETIME)\r\n    AS DATETIME)                        AS time,\r\n    AVG(temp_val)                       AS avg_temp_line,\r\n    AVG(humid_val)                      AS avg_humid_line,\r\n    STRING_AGG(part_name,      ' / ')   AS [Part Name],\r\n    STRING_AGG(material_no,    ' / ')   AS [Material No],\r\n    STRING_AGG(oi_no,          ' / ')   AS [OI No.],\r\n    STRING_AGG(sample_part_no, ' / ')   AS [Sample Part No.],\r\n    STRING_AGG(lot_material,   ' / ')   AS [Lot Material],\r\n    STRING_AGG(condition_std,  ' / ')   AS [Condition STD],\r\n    STRING_AGG(qc_member,      ' / ')   AS [QC Member]\r\nFROM base\r\n\r\nUNION ALL\r\n\r\nSELECT\r\n    CAST(\r\n        CAST((SELECT MAX(dt) FROM ng_only) AS DATETIME)\r\n        + CAST((SELECT TOP 1 prod_time FROM ng_only ORDER BY dt DESC, prod_time DESC) AS DATETIME)\r\n    AS DATETIME)                        AS time,\r\n    AVG(temp_val)                       AS avg_temp_line,\r\n    AVG(humid_val)                      AS avg_humid_line,\r\n    STRING_AGG(part_name,      ' / ')   AS [Part Name],\r\n    STRING_AGG(material_no,    ' / ')   AS [Material No],\r\n    STRING_AGG(oi_no,          ' / ')   AS [OI No.],\r\n    STRING_AGG(sample_part_no, ' / ')   AS [Sample Part No.],\r\n    STRING_AGG(lot_material,   ' / ')   AS [Lot Material],\r\n    STRING_AGG(condition_std,  ' / ')   AS [Condition STD],\r\n    STRING_AGG(qc_member,      ' / ')   AS [QC Member]\r\nFROM base",
+          "refId": "B",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        },
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH base AS (\r\n    SELECT\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS dt,\r\n        TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT) AS temp_val,\r\n        TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT) AS humid_val,\r\n        TRY_CONVERT(TIME, [Production Time])              AS prod_time,\r\n        LTRIM(RTRIM(UPPER([Judgement [S]]])))             AS judg,\r\n        LTRIM(RTRIM([Part Name]))        AS part_name,\r\n        LTRIM(RTRIM([Material No.]))     AS material_no,\r\n        LTRIM(RTRIM([OI No.]))           AS oi_no,\r\n        LTRIM(RTRIM([Sample Part No.])) AS sample_part_no,\r\n        LTRIM(RTRIM([Lot Material]))     AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))    AS condition_std,\r\n        LTRIM(RTRIM([QC Member]))        AS qc_member\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT) IS NOT NULL\r\n        AND (\r\n            '${rh_month:csv}' = 'All'\r\n            OR CASE CAST(LTRIM(RTRIM([Month Record])) AS INT)\r\n                    WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                    WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                    WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                    WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n               END IN (${rh_month:singlequote})\r\n        )\r\n        AND ('${rh_year:csv}'    = 'All' OR LTRIM(RTRIM([Year Record])) IN (${rh_year:singlequote}))\r\n        AND ('${rh_mold:csv}'    = 'All' OR LTRIM(RTRIM([Mold No.]))    IN (${rh_mold:singlequote}))\r\n        AND ('${rh_mc_no:csv}'   = 'All' OR LTRIM(RTRIM([M/C No.]))     IN (${rh_mc_no:singlequote}))\r\n        AND ('${rh_part_no:csv}' = 'All' OR LTRIM(RTRIM([Part No.]))    IN (${rh_part_no:singlequote}))\r\n),\r\noverall_avg AS (\r\n    SELECT AVG(temp_val) AS avg_temp_val, AVG(humid_val) AS avg_humid_val\r\n    FROM base\r\n),\r\nng_time_by_day AS (\r\n    SELECT dt, MAX(prod_time) AS ng_time\r\n    FROM base WHERE judg = 'X'\r\n    GROUP BY dt\r\n),\r\nall_days AS (\r\n    SELECT DISTINCT dt FROM base\r\n),\r\nday_breakdown AS (\r\n    SELECT\r\n        dt,\r\n        STRING_AGG(part_name,      ' / ') AS part_name,\r\n        STRING_AGG(material_no,    ' / ') AS material_no,\r\n        STRING_AGG(oi_no,          ' / ') AS oi_no,\r\n        STRING_AGG(sample_part_no, ' / ') AS sample_part_no,\r\n        STRING_AGG(lot_material,   ' / ') AS lot_material,\r\n        STRING_AGG(condition_std,  ' / ') AS condition_std,\r\n        STRING_AGG(qc_member,      ' / ') AS qc_member\r\n    FROM base\r\n    GROUP BY dt\r\n)\r\nSELECT\r\n    CASE\r\n        WHEN ng.ng_time IS NOT NULL\r\n        THEN CAST(CAST(d.dt AS DATETIME) + CAST(ng.ng_time AS DATETIME) AS DATETIME)\r\n        ELSE CAST(d.dt AS DATETIME)\r\n    END                    AS time,\r\n    oa.avg_temp_val        AS avg_temp_line,\r\n    oa.avg_humid_val       AS avg_humid_line,\r\n    db.part_name           AS [Part Name],\r\n    db.material_no         AS [Material No],\r\n    db.oi_no               AS [OI No.],\r\n    db.sample_part_no      AS [Sample Part No.],\r\n    db.lot_material        AS [Lot Material],\r\n    db.condition_std       AS [Condition STD],\r\n    db.qc_member           AS [QC Member]\r\nFROM all_days AS d\r\nCROSS JOIN overall_avg AS oa\r\nLEFT JOIN ng_time_by_day AS ng ON ng.dt = d.dt\r\nLEFT JOIN day_breakdown   AS db ON db.dt = d.dt\r\nORDER BY time",
+          "refId": "C",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        },
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "hide": false,
+          "rawQuery": true,
+          "rawSql": "WITH lot_data AS (\r\n    SELECT\r\n        [Identical ID],\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS dt,\r\n        AVG(TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT)) AS avg_temp,\r\n        AVG(TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT)) AS avg_humid,\r\n        MAX(CASE WHEN LTRIM(RTRIM(UPPER([Judgement [S]]]))) = 'X'\r\n                 THEN 1 ELSE 0 END) AS has_ng,\r\n        MAX(CASE WHEN LTRIM(RTRIM(UPPER([Judgement [S]]]))) = 'X'\r\n                 THEN TRY_CONVERT(TIME, [Production Time]) END) AS ng_time,\r\n        MAX(LTRIM(RTRIM([Part Name])))       AS part_name,\r\n        MAX(LTRIM(RTRIM([Material No.])))    AS material_no,\r\n        MAX(LTRIM(RTRIM([OI No.])))          AS oi_no,\r\n        MAX(LTRIM(RTRIM([Sample Part No.]))) AS sample_part_no,\r\n        MAX(LTRIM(RTRIM([Lot Material])))    AS lot_material,\r\n        MAX(LTRIM(RTRIM([Condition STD])))   AS condition_std,\r\n        MAX(LTRIM(RTRIM([QC Member])))       AS qc_member\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Room Temp (C)])) AS FLOAT) IS NOT NULL\r\n        AND TRY_CAST(LTRIM(RTRIM([Humidiy (%)]))   AS FLOAT) IS NOT NULL\r\n        AND (\r\n            '${rh_month:csv}' = 'All'\r\n            OR CASE CAST(LTRIM(RTRIM([Month Record])) AS INT)\r\n                    WHEN 1  THEN 'Jan' WHEN 2  THEN 'Feb' WHEN 3  THEN 'Mar'\r\n                    WHEN 4  THEN 'Apr' WHEN 5  THEN 'May' WHEN 6  THEN 'Jun'\r\n                    WHEN 7  THEN 'Jul' WHEN 8  THEN 'Aug' WHEN 9  THEN 'Sep'\r\n                    WHEN 10 THEN 'Oct' WHEN 11 THEN 'Nov' WHEN 12 THEN 'Dec'\r\n               END IN (${rh_month:singlequote})\r\n        )\r\n        AND ('${rh_year:csv}'    = 'All' OR LTRIM(RTRIM([Year Record])) IN (${rh_year:singlequote}))\r\n        AND ('${rh_mold:csv}'    = 'All' OR LTRIM(RTRIM([Mold No.]))    IN (${rh_mold:singlequote}))\r\n        AND ('${rh_mc_no:csv}'   = 'All' OR LTRIM(RTRIM([M/C No.]))     IN (${rh_mc_no:singlequote}))\r\n        AND ('${rh_part_no:csv}' = 'All' OR LTRIM(RTRIM([Part No.]))    IN (${rh_part_no:singlequote}))\r\n    GROUP BY\r\n        [Identical ID],\r\n        TRY_CONVERT(DATE, [Production Date [S]]])\r\n)\r\nSELECT\r\n    -- ✅ ถ้า ng_time เป็น NULL → ใช้ dt เปล่า\r\n    CASE\r\n        WHEN MAX(ng_time) IS NOT NULL\r\n        THEN CAST(CAST(dt AS DATETIME) + CAST(MAX(ng_time) AS DATETIME) AS DATETIME)\r\n        ELSE CAST(dt AS DATETIME)\r\n    END                               AS time,\r\n    AVG(avg_temp)                     AS ng_temp_marker,\r\n    AVG(avg_humid)                    AS ng_humid_marker,\r\n    STRING_AGG(part_name,      ' / ') AS [Part Name],\r\n    STRING_AGG(material_no,    ' / ') AS [Material No],\r\n    STRING_AGG(oi_no,          ' / ') AS [OI No.],\r\n    STRING_AGG(sample_part_no, ' / ') AS [Sample Part No.],\r\n    STRING_AGG(lot_material,   ' / ') AS [Lot Material],\r\n    STRING_AGG(condition_std,  ' / ') AS [Condition STD],\r\n    STRING_AGG(qc_member,      ' / ') AS [QC Member]\r\nFROM lot_data\r\nWHERE has_ng = 1\r\nGROUP BY dt\r\nORDER BY time",
+          "refId": "D",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "ROOM TEMP & HUMIDITY PER MONTHLY AVG",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May"
+          ],
+          "value": [
+            "Jan",
+            "Feb",
+            "Mar",
+            "Apr",
+            "May"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    CASE LTRIM(RTRIM([Month Record]))                    -- ✅ __value เป็นชื่อเดือนด้วย\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __value\nFROM (\n    SELECT DISTINCT [Month Record]\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE LTRIM(RTRIM([Month Record])) != ''\n) AS t\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "label": "Month",
+        "multi": true,
+        "name": "rh_month",
+        "options": [],
+        "query": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    CASE LTRIM(RTRIM([Month Record]))                    -- ✅ __value เป็นชื่อเดือนด้วย\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __value\nFROM (\n    SELECT DISTINCT [Month Record]\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE LTRIM(RTRIM([Month Record])) != ''\n) AS t\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT TRIM([Year Record]) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY value DESC",
+        "label": "Year",
+        "multi": true,
+        "name": "rh_year",
+        "options": [],
+        "query": "SELECT DISTINCT TRIM([Year Record]) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY value DESC",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "1079"
+          ],
+          "value": [
+            "1079"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Mold No.]) AS __text,\n    TRIM([Mold No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND TRIM([Mold No.]) NOT LIKE '0%'\n  AND LEN(TRIM([Mold No.])) > 1\n  AND [Judgement [S]]] = 'X'              -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "label": "Mold No.",
+        "multi": true,
+        "name": "rh_mold",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Mold No.]) AS __text,\n    TRIM([Mold No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND TRIM([Mold No.]) NOT LIKE '0%'\n  AND LEN(TRIM([Mold No.])) > 1\n  AND [Judgement [S]]] = 'X'              -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "ST-13"
+          ],
+          "value": [
+            "ST-13"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([M/C No.]) AS __text,\n    TRIM([M/C No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND TRIM([M/C No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${rh_mold:singlequote})                -- ✅ กรองตาม Mold No. ที่เลือก\nORDER BY __value",
+        "label": "M/C No.",
+        "multi": true,
+        "name": "rh_mc_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([M/C No.]) AS __text,\n    TRIM([M/C No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND TRIM([M/C No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${rh_mold:singlequote})                -- ✅ กรองตาม Mold No. ที่เลือก\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "EH2300231P953"
+          ],
+          "value": [
+            "EH2300231P953"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Part No.]) AS __text,\n    TRIM([Part No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Part No.] IS NOT NULL\n  AND TRIM([Part No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${rh_mold:singlequote})                -- ✅ กรองตาม Mold No.\n  AND TRIM([M/C No.])  IN (${rh_mc_no:singlequote})               -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "label": "Part No.",
+        "multi": true,
+        "name": "rh_part_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Part No.]) AS __text,\n    TRIM([Part No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Part No.] IS NOT NULL\n  AND TRIM([Part No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${rh_mold:singlequote})                -- ✅ กรองตาม Mold No.\n  AND TRIM([M/C No.])  IN (${rh_mc_no:singlequote})               -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "ROOM TEMP & HUMIDITY PER MONTHLY AVG",
+  "uid": "dfoabsa4i1x4wd",
+  "version": 33,
+  "weekStart": ""
+}

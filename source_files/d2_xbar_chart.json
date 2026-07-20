@@ -1,0 +1,622 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 210,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-green",
+            "mode": "palette-classic"
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 2,
+      "options": {
+        "colorMode": "value",
+        "graphMode": "area",
+        "justifyMode": "auto",
+        "orientation": "auto",
+        "percentChangeColorMode": "standard",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "showPercentChange": false,
+        "textMode": "auto",
+        "wideLayout": true
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": ";WITH ng_lot_ids AS (\r\n    SELECT DISTINCT [Identical ID]\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE UPPER(LTRIM(RTRIM([Judgement [S]]]))) = 'X'\r\n      AND [Identical ID] IS NOT NULL\r\n      AND (\r\n          '${spc_mold:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([Mold No.])) + ',',\r\n                       ',' + '${spc_mold:csv}' + ',') > 0\r\n      )\r\n      AND (\r\n          '${spc_mc_no:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([M/C No.])) + ',',\r\n                       ',' + '${spc_mc_no:csv}' + ',') > 0\r\n      )\r\n      AND (\r\n          '${spc_part_no:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([Part No.])) + ',',\r\n                       ',' + '${spc_part_no:csv}' + ',') > 0\r\n      )\r\n      AND (\r\n          '${spc_year:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([Year Record])) + ',',\r\n                       ',' + '${spc_year:csv}' + ',') > 0\r\n      )\r\n),\r\nmain_data AS (\r\n    SELECT\r\n        -- ✅ Step 1: ใช้ TRY_CONVERT โดยตรง ไม่แปลง DD-MM-YY\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS time,\r\n        TRY_CAST(m.[XBar] AS FLOAT)              AS xbar_val,\r\n        TRY_CAST(m.[R]    AS FLOAT)              AS r_val,\r\n        TRY_CAST(LTRIM(RTRIM([Upper Limit])) AS FLOAT) AS ul_val,\r\n        TRY_CAST(\r\n            CASE\r\n                WHEN CHARINDEX(' ', LTRIM(RTRIM([STD Value]))) > 0\r\n                THEN LEFT(LTRIM(RTRIM([STD Value])),\r\n                          CHARINDEX(' ', LTRIM(RTRIM([STD Value]))) - 1)\r\n                ELSE LTRIM(RTRIM([STD Value]))\r\n            END\r\n        AS FLOAT)                                AS std_val,\r\n        TRY_CAST(LTRIM(RTRIM([Lower Limit])) AS FLOAT) AS ll_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database] AS m\r\n    WHERE\r\n        [Identical ID] IN (SELECT [Identical ID] FROM ng_lot_ids)\r\n        -- ✅ Step 1: ลบ LEN(...) = 8 ออก\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        -- ✅ Step 1: ใช้ TRY_CAST แทน IS NOT NULL\r\n        AND TRY_CAST(m.[XBar] AS FLOAT) IS NOT NULL\r\n        AND TRY_CAST(m.[R]    AS FLOAT) IS NOT NULL\r\n        AND (\r\n            '${spc_year:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([Year Record])) + ',',\r\n                         ',' + '${spc_year:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_mold:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([Mold No.])) + ',',\r\n                         ',' + '${spc_mold:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_mc_no:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([M/C No.])) + ',',\r\n                         ',' + '${spc_mc_no:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_part_no:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([Part No.])) + ',',\r\n                         ',' + '${spc_part_no:csv}' + ',') > 0\r\n        )\r\n        AND CHARINDEX(\r\n                ',' + LTRIM(RTRIM([ISC])) + ',',\r\n                ISNULL(\r\n                    NULLIF(',' + '${spc_isc:csv}' + ',', ',All,'),\r\n                    ',' + LTRIM(RTRIM([ISC])) + ','\r\n                )\r\n            ) > 0\r\n        AND CHARINDEX(\r\n                ',' + LTRIM(RTRIM([Cavity No.])) + ',',\r\n                ISNULL(\r\n                    NULLIF(',' + '${spc_cavity:csv}' + ',', ',All,'),\r\n                    ',' + LTRIM(RTRIM([Cavity No.])) + ','\r\n                )\r\n            ) > 0\r\n)\r\nSELECT * FROM main_data\r\n\r\nUNION ALL\r\n\r\n-- ✅ Step 2: anchor ต้นปี → ใช้ MIN date จริงแทน spc_year string\r\nSELECT\r\n    CAST(DATEADD(YEAR, DATEDIFF(YEAR, 0, MIN(time)), 0) AS DATE),\r\n    NULL, NULL,\r\n    MAX(ul_val), MAX(std_val), MAX(ll_val)\r\nFROM main_data\r\nWHERE ul_val IS NOT NULL\r\n\r\nUNION ALL\r\n\r\n-- ✅ Step 2: anchor ปลายปี → ใช้ MAX date จริงแทน spc_year string\r\nSELECT\r\n    CAST(DATEADD(YEAR, DATEDIFF(YEAR, 0, MAX(time)) + 1, -1) AS DATE),\r\n    NULL, NULL,\r\n    MAX(ul_val), MAX(std_val), MAX(ll_val)\r\nFROM main_data\r\nWHERE ul_val IS NOT NULL\r\n\r\nORDER BY time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "Panel Title",
+      "type": "stat"
+    },
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "barAlignment": 0,
+            "barWidthFactor": 0.6,
+            "drawStyle": "line",
+            "fillOpacity": 0,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "insertNulls": false,
+            "lineInterpolation": "linear",
+            "lineStyle": {
+              "fill": "solid"
+            },
+            "lineWidth": 1,
+            "pointSize": 5,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "showPoints": "auto",
+            "spanNulls": false,
+            "stacking": {
+              "group": "A",
+              "mode": "none"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^xbar_val$"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 300
+              },
+              {
+                "id": "displayName",
+                "value": "X̄ (XBar)"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 9
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^r_val$"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-blue",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "min",
+                "value": 0
+              },
+              {
+                "id": "max",
+                "value": 100
+              },
+              {
+                "id": "displayName",
+                "value": "R̄ (Range)"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "right"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 0
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    0,
+                    10
+                  ],
+                  "fill": "dot"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "never"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 8
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^ul_val$"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "light-green",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "UL (Upper Limit)"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 12
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^std_val$"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "semi-dark-orange",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "STD Value"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 12
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byRegexp",
+              "options": "^ll_val$"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              },
+              {
+                "id": "displayName",
+                "value": "LL (Lower Limit)"
+              },
+              {
+                "id": "custom.axisPlacement",
+                "value": "left"
+              },
+              {
+                "id": "custom.lineWidth",
+                "value": 2
+              },
+              {
+                "id": "custom.lineStyle",
+                "value": {
+                  "dash": [
+                    10,
+                    10
+                  ],
+                  "fill": "dash"
+                }
+              },
+              {
+                "id": "custom.showPoints",
+                "value": "always"
+              },
+              {
+                "id": "custom.pointSize",
+                "value": 12
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 12,
+        "w": 14,
+        "x": 0,
+        "y": 8
+      },
+      "id": 1,
+      "options": {
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "tooltip": {
+          "mode": "multi",
+          "sort": "none"
+        }
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": ";WITH ng_lot_ids AS (\r\n    SELECT DISTINCT [Identical ID]\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE UPPER(LTRIM(RTRIM([Judgement [S]]]))) = 'X'\r\n      AND [Identical ID] IS NOT NULL\r\n      AND (\r\n          '${spc_mold:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([Mold No.])) + ',',\r\n                       ',' + '${spc_mold:csv}' + ',') > 0\r\n      )\r\n      AND (\r\n          '${spc_mc_no:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([M/C No.])) + ',',\r\n                       ',' + '${spc_mc_no:csv}' + ',') > 0\r\n      )\r\n      AND (\r\n          '${spc_part_no:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([Part No.])) + ',',\r\n                       ',' + '${spc_part_no:csv}' + ',') > 0\r\n      )\r\n      AND (\r\n          '${spc_year:csv}' = 'All'\r\n          OR CHARINDEX(',' + LTRIM(RTRIM([Year Record])) + ',',\r\n                       ',' + '${spc_year:csv}' + ',') > 0\r\n      )\r\n),\r\nng_time_lookup AS (\r\n    SELECT\r\n        [Identical ID],\r\n        TRY_CONVERT(DATE, [Production Date [S]]]) AS prod_date,\r\n        MAX(TRY_CONVERT(TIME, [Production Time])) AS ng_time\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE UPPER(LTRIM(RTRIM([Judgement [S]]]))) = 'X'\r\n      AND [Production Date [S]]] IS NOT NULL\r\n      AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n    GROUP BY\r\n        [Identical ID],\r\n        TRY_CONVERT(DATE, [Production Date [S]]])\r\n),\r\nunique_records AS (\r\n    SELECT DISTINCT\r\n        [Part Type],\r\n        [Identical ID],\r\n        [QC Member],\r\n        [Year Record],\r\n        [Month Record],\r\n        [File Run No.],\r\n        [Sequence],\r\n        LTRIM(RTRIM([Part Name]))       AS part_name,\r\n        LTRIM(RTRIM([Material No.]))    AS material_no,\r\n        LTRIM(RTRIM([OI No.]))          AS oi_no,\r\n        LTRIM(RTRIM([Sample Part No.])) AS sample_part_no,\r\n        LTRIM(RTRIM([Lot Material]))    AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))   AS condition_std,\r\n        LTRIM(RTRIM([QC Member]))       AS qc_member_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Identical ID] IN (SELECT [Identical ID] FROM ng_lot_ids)\r\n        AND [Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, [Production Date [S]]]) IS NOT NULL\r\n        AND (\r\n            '${spc_year:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([Year Record])) + ',',\r\n                         ',' + '${spc_year:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_mold:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([Mold No.])) + ',',\r\n                         ',' + '${spc_mold:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_mc_no:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([M/C No.])) + ',',\r\n                         ',' + '${spc_mc_no:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_part_no:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM([Part No.])) + ',',\r\n                         ',' + '${spc_part_no:csv}' + ',') > 0\r\n        )\r\n        AND CHARINDEX(\r\n                ',' + LTRIM(RTRIM([ISC])) + ',',\r\n                ISNULL(NULLIF(',' + '${spc_isc:csv}' + ',', ',All,'),\r\n                       ',' + LTRIM(RTRIM([ISC])) + ',')\r\n            ) > 0\r\n        AND CHARINDEX(\r\n                ',' + LTRIM(RTRIM([Cavity No.])) + ',',\r\n                ISNULL(NULLIF(',' + '${spc_cavity:csv}' + ',', ',All,'),\r\n                       ',' + LTRIM(RTRIM([Cavity No.])) + ',')\r\n            ) > 0\r\n),\r\nd_part    AS (SELECT DISTINCT [Identical ID], part_name      FROM unique_records),\r\nd_mat     AS (SELECT DISTINCT [Identical ID], material_no    FROM unique_records),\r\nd_oi      AS (SELECT DISTINCT [Identical ID], oi_no          FROM unique_records),\r\nd_sample  AS (SELECT DISTINCT [Identical ID], sample_part_no FROM unique_records),\r\nd_lot     AS (SELECT DISTINCT [Identical ID], lot_material   FROM unique_records),\r\nd_cond    AS (SELECT DISTINCT [Identical ID], condition_std  FROM unique_records),\r\nd_qc      AS (SELECT DISTINCT [Identical ID], qc_member_val  FROM unique_records),\r\nagg_part   AS (SELECT [Identical ID], STRING_AGG(part_name,      ' / ') AS part_name_agg      FROM d_part   GROUP BY [Identical ID]),\r\nagg_mat    AS (SELECT [Identical ID], STRING_AGG(material_no,    ' / ') AS material_no_agg    FROM d_mat    GROUP BY [Identical ID]),\r\nagg_oi     AS (SELECT [Identical ID], STRING_AGG(oi_no,          ' / ') AS oi_no_agg          FROM d_oi     GROUP BY [Identical ID]),\r\nagg_sample AS (SELECT [Identical ID], STRING_AGG(sample_part_no, ' / ') AS sample_part_no_agg FROM d_sample GROUP BY [Identical ID]),\r\nagg_lot    AS (SELECT [Identical ID], STRING_AGG(lot_material,   ' / ') AS lot_material_agg   FROM d_lot    GROUP BY [Identical ID]),\r\nagg_cond   AS (SELECT [Identical ID], STRING_AGG(condition_std,  ' / ') AS condition_std_agg  FROM d_cond   GROUP BY [Identical ID]),\r\nagg_qc     AS (SELECT [Identical ID], STRING_AGG(qc_member_val,  ' / ') AS qc_member_agg      FROM d_qc     GROUP BY [Identical ID]),\r\nmain_data AS (\r\n    SELECT\r\n        CASE\r\n            WHEN ng.ng_time IS NOT NULL\r\n            THEN CAST(\r\n                    CAST(TRY_CONVERT(DATE, m.[Production Date [S]]]) AS DATETIME)\r\n                    + CAST(ng.ng_time AS DATETIME)\r\n                 AS DATETIME)\r\n            ELSE CAST(TRY_CONVERT(DATE, m.[Production Date [S]]]) AS DATETIME)\r\n        END                                               AS time,\r\n        m.[Identical ID],\r\n        -- ✅ รองรับ XBar/R เป็น FLOAT โดยตรง หรือ VARCHAR\r\n        CASE\r\n            WHEN TRY_CAST(m.[XBar] AS FLOAT) IS NOT NULL\r\n            THEN TRY_CAST(m.[XBar] AS FLOAT)\r\n            ELSE NULL\r\n        END                                               AS xbar_val,\r\n        CASE\r\n            WHEN TRY_CAST(m.[R] AS FLOAT) IS NOT NULL\r\n            THEN TRY_CAST(m.[R] AS FLOAT)\r\n            ELSE NULL\r\n        END                                               AS r_val,\r\n        TRY_CAST(LTRIM(RTRIM(m.[Upper Limit])) AS FLOAT) AS ul_val,\r\n        TRY_CAST(\r\n            CASE\r\n                WHEN CHARINDEX(' ', LTRIM(RTRIM(m.[STD Value]))) > 0\r\n                THEN LEFT(LTRIM(RTRIM(m.[STD Value])),\r\n                          CHARINDEX(' ', LTRIM(RTRIM(m.[STD Value]))) - 1)\r\n                ELSE LTRIM(RTRIM(m.[STD Value]))\r\n            END\r\n        AS FLOAT)                                         AS std_val,\r\n        TRY_CAST(LTRIM(RTRIM(m.[Lower Limit])) AS FLOAT) AS ll_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database] AS m\r\n    LEFT JOIN ng_time_lookup AS ng\r\n        ON  m.[Identical ID] = ng.[Identical ID]\r\n        AND TRY_CONVERT(DATE, m.[Production Date [S]]]) = ng.prod_date\r\n    WHERE\r\n        m.[Production Date [S]]] IS NOT NULL\r\n        AND TRY_CONVERT(DATE, m.[Production Date [S]]]) IS NOT NULL\r\n        -- ✅ ลบ IS NOT NULL ออก → ใช้ TRY_CAST แทน\r\n        AND (TRY_CAST(m.[XBar] AS FLOAT) IS NOT NULL\r\n             OR TRY_CAST(m.[R]   AS FLOAT) IS NOT NULL)\r\n        AND (\r\n            '${spc_year:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM(m.[Year Record])) + ',',\r\n                         ',' + '${spc_year:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_mold:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM(m.[Mold No.])) + ',',\r\n                         ',' + '${spc_mold:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_mc_no:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM(m.[M/C No.])) + ',',\r\n                         ',' + '${spc_mc_no:csv}' + ',') > 0\r\n        )\r\n        AND (\r\n            '${spc_part_no:csv}' = 'All'\r\n            OR CHARINDEX(',' + LTRIM(RTRIM(m.[Part No.])) + ',',\r\n                         ',' + '${spc_part_no:csv}' + ',') > 0\r\n        )\r\n        AND CHARINDEX(\r\n                ',' + LTRIM(RTRIM(m.[ISC])) + ',',\r\n                ISNULL(NULLIF(',' + '${spc_isc:csv}' + ',', ',All,'),\r\n                       ',' + LTRIM(RTRIM(m.[ISC])) + ',')\r\n            ) > 0\r\n        AND CHARINDEX(\r\n                ',' + LTRIM(RTRIM(m.[Cavity No.])) + ',',\r\n                ISNULL(NULLIF(',' + '${spc_cavity:csv}' + ',', ',All,'),\r\n                       ',' + LTRIM(RTRIM(m.[Cavity No.])) + ',')\r\n            ) > 0\r\n),\r\nmain_with_breakdown AS (\r\n    SELECT\r\n        m.time,\r\n        m.xbar_val,\r\n        m.r_val,\r\n        m.ul_val,\r\n        m.std_val,\r\n        m.ll_val,\r\n        ap.part_name_agg       AS [Part Name],\r\n        am.material_no_agg     AS [Material No],\r\n        ao.oi_no_agg           AS [OI No.],\r\n        asa.sample_part_no_agg AS [Sample Part No.],\r\n        al.lot_material_agg    AS [Lot Material],\r\n        ac.condition_std_agg   AS [Condition STD],\r\n        aq.qc_member_agg       AS [QC Member]\r\n    FROM main_data             m\r\n    LEFT JOIN agg_part   ap  ON ap.[Identical ID]  = m.[Identical ID]\r\n    LEFT JOIN agg_mat    am  ON am.[Identical ID]  = m.[Identical ID]\r\n    LEFT JOIN agg_oi     ao  ON ao.[Identical ID]  = m.[Identical ID]\r\n    LEFT JOIN agg_sample asa ON asa.[Identical ID] = m.[Identical ID]\r\n    LEFT JOIN agg_lot    al  ON al.[Identical ID]  = m.[Identical ID]\r\n    LEFT JOIN agg_cond   ac  ON ac.[Identical ID]  = m.[Identical ID]\r\n    LEFT JOIN agg_qc     aq  ON aq.[Identical ID]  = m.[Identical ID]\r\n)\r\nSELECT * FROM main_with_breakdown\r\n\r\nUNION ALL\r\n\r\nSELECT\r\n    CAST(DATEADD(YEAR, DATEDIFF(YEAR, 0, MIN(time)), 0) AS DATETIME),\r\n    NULL, NULL,\r\n    MAX(ul_val), MAX(std_val), MAX(ll_val),\r\n    NULL, NULL, NULL, NULL, NULL, NULL, NULL\r\nFROM main_data\r\nWHERE ul_val IS NOT NULL\r\n\r\nUNION ALL\r\n\r\nSELECT\r\n    CAST(DATEADD(YEAR, DATEDIFF(YEAR, 0, MAX(time)) + 1, -1) AS DATETIME),\r\n    NULL, NULL,\r\n    MAX(ul_val), MAX(std_val), MAX(ll_val),\r\n    NULL, NULL, NULL, NULL, NULL, NULL, NULL\r\nFROM main_data\r\nWHERE ul_val IS NOT NULL\r\n\r\nORDER BY time",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "Panel Title",
+      "type": "timeseries"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "Jan"
+          ],
+          "value": [
+            "Jan"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    CASE LTRIM(RTRIM([Month Record]))                    -- ✅ __value เป็นชื่อเดือนด้วย\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __value\nFROM (\n    SELECT DISTINCT [Month Record]\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE LTRIM(RTRIM([Month Record])) != ''\n) AS t\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "label": "Month",
+        "multi": true,
+        "name": "spc_month",
+        "options": [],
+        "query": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    CASE LTRIM(RTRIM([Month Record]))                    -- ✅ __value เป็นชื่อเดือนด้วย\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __value\nFROM (\n    SELECT DISTINCT [Month Record]\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n    WHERE LTRIM(RTRIM([Month Record])) != ''\n) AS t\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT TRIM([Year Record]) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY value DESC",
+        "label": "Year",
+        "multi": true,
+        "name": "spc_year",
+        "options": [],
+        "query": "SELECT DISTINCT TRIM([Year Record]) AS value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY value DESC",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "1079",
+          "value": "1079"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Mold No.]) AS __text,\n    TRIM([Mold No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND TRIM([Mold No.]) NOT LIKE '0%'\n  AND LEN(TRIM([Mold No.])) > 1\n  AND [Judgement [S]]] = 'X'    -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "label": "Mold No.",
+        "name": "spc_mold",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Mold No.]) AS __text,\n    TRIM([Mold No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND TRIM([Mold No.]) NOT LIKE '0%'\n  AND LEN(TRIM([Mold No.])) > 1\n  AND [Judgement [S]]] = 'X'    -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "ST-13",
+          "value": "ST-13"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    [M/C No.] AS __text,\n    [M/C No.] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND TRIM([M/C No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})               -- ✅ กรองตาม Mold No.\nORDER BY __value",
+        "label": "M/C No.",
+        "name": "spc_mc_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    [M/C No.] AS __text,\n    [M/C No.] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND TRIM([M/C No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})               -- ✅ กรองตาม Mold No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "EH2300231P953",
+          "value": "EH2300231P953"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Part No.]) AS __text,\n    TRIM([Part No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Part No.] IS NOT NULL\n  AND TRIM([Part No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})               -- ✅ กรองตาม Mold No.\n  AND [M/C No.]        IN (${spc_mc_no:singlequote})              -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "label": "Part No.",
+        "name": "spc_part_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Part No.]) AS __text,\n    TRIM([Part No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Part No.] IS NOT NULL\n  AND TRIM([Part No.]) <> ''\n  AND [Judgement [S]]] = 'X'                                       -- ✅ เฉพาะที่มี NG\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})               -- ✅ กรองตาม Mold No.\n  AND [M/C No.]        IN (${spc_mc_no:singlequote})              -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "A",
+          "value": "A"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([ISC]) AS __text,\n    TRIM([ISC]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [ISC] IS NOT NULL\n  AND TRIM([ISC]) <> ''\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})\n  AND [M/C No.]        IN (${spc_mc_no:singlequote})\n  AND TRIM([Part No.]) IN (${spc_part_no:singlequote})\nORDER BY __value",
+        "label": "ISC",
+        "name": "spc_isc",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([ISC]) AS __text,\n    TRIM([ISC]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [ISC] IS NOT NULL\n  AND TRIM([ISC]) <> ''\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})\n  AND [M/C No.]        IN (${spc_mc_no:singlequote})\n  AND TRIM([Part No.]) IN (${spc_part_no:singlequote})\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "1",
+          "value": "1"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    TRIM([Cavity No.]) AS __text,\n    TRIM([Cavity No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Cavity No.] IS NOT NULL\n  AND TRIM([Cavity No.]) <> ''\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})\n  AND [M/C No.]        IN (${spc_mc_no:singlequote})\n  AND TRIM([Part No.]) IN (${spc_part_no:singlequote})\nORDER BY __value",
+        "label": "Cavity No.",
+        "name": "spc_cavity",
+        "options": [],
+        "query": "SELECT DISTINCT\n    TRIM([Cavity No.]) AS __text,\n    TRIM([Cavity No.]) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Cavity No.] IS NOT NULL\n  AND TRIM([Cavity No.]) <> ''\n  AND TRIM([Mold No.]) IN (${spc_mold:singlequote})\n  AND [M/C No.]        IN (${spc_mc_no:singlequote})\n  AND TRIM([Part No.]) IN (${spc_part_no:singlequote})\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "X̄ CONTROL CHART  PER SEQUENCE/DATE (X̄ CHART)",
+  "uid": "ffogyujv8lhj4f",
+  "version": 58,
+  "weekStart": ""
+}

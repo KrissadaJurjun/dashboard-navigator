@@ -1,0 +1,252 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 203,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "fixedColor": "dark-red",
+            "mode": "fixed"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 21,
+        "w": 16,
+        "x": 0,
+        "y": 0
+      },
+      "id": 1,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": ";WITH unique_records AS (\r\n    SELECT DISTINCT\r\n        [Part Type],\r\n        [Identical ID],\r\n        [QC Member],\r\n        [Year Record],\r\n        [Month Record],\r\n        [File Run No.],\r\n        [Sequence],\r\n        LTRIM(RTRIM([Cavity No.]))      AS cavity_clean,\r\n        [ISC],\r\n        [Judgement [S]]],\r\n        LTRIM(RTRIM([Part Name]))      AS part_name,\r\n        LTRIM(RTRIM([Material No.]))    AS material_no,\r\n        LTRIM(RTRIM([OI No.]))          AS oi_no,\r\n        LTRIM(RTRIM([Sample Part No.])) AS sample_part_no,\r\n        LTRIM(RTRIM([Lot Material]))   AS lot_material,\r\n        LTRIM(RTRIM([Condition STD]))  AS condition_std,\r\n        LTRIM(RTRIM([QC Member]))      AS qc_member_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        [Part Type] = 'Injection'\r\n        AND [Cavity No.] IS NOT NULL\r\n        AND LTRIM(RTRIM([Cavity No.])) != ''\r\n        AND LTRIM(RTRIM([Year Record]))\r\n                IN ([[year:singlequote]])\r\n        AND CAST([Month Record] AS VARCHAR(2))\r\n                IN ([[month:singlequote]])\r\n        AND (\r\n            '[[mold_no]]' = 'All'\r\n            OR LTRIM(RTRIM([Mold No.])) IN ([[mold_no:singlequote]])\r\n        )\r\n        AND (\r\n            '[[mc_no]]' = 'All'\r\n            OR LTRIM(RTRIM([M/C No.])) IN ([[mc_no:singlequote]])\r\n        )\r\n        AND (\r\n            '[[part_no]]' = 'All'\r\n            OR LTRIM(RTRIM([Part No.])) IN ([[part_no:singlequote]])\r\n        )\r\n),\r\nng_lot_cavity AS (\r\n    SELECT DISTINCT\r\n        [Identical ID],\r\n        cavity_clean,\r\n        part_name,\r\n        material_no,\r\n        oi_no,\r\n        sample_part_no,\r\n        lot_material,\r\n        condition_std,\r\n        qc_member_val\r\n    FROM unique_records\r\n    WHERE [Judgement [S]]] = 'X'\r\n),\r\n-- ✅ DISTINCT แยกทีละ field ต่อ Cavity\r\n-- ถ้าค่าเหมือนกัน → เหลือตัวเดียว\r\n-- ถ้าค่าต่างกัน → คงทั้งหมด\r\nd_part AS (\r\n    SELECT DISTINCT cavity_clean, part_name\r\n    FROM ng_lot_cavity\r\n),\r\nd_material AS (\r\n    SELECT DISTINCT cavity_clean, material_no\r\n    FROM ng_lot_cavity\r\n),\r\nd_oi AS (\r\n    SELECT DISTINCT cavity_clean, oi_no\r\n    FROM ng_lot_cavity\r\n),\r\nd_sample AS (\r\n    SELECT DISTINCT cavity_clean, sample_part_no\r\n    FROM ng_lot_cavity\r\n),\r\nd_lot AS (\r\n    SELECT DISTINCT cavity_clean, lot_material\r\n    FROM ng_lot_cavity\r\n),\r\nd_cond AS (\r\n    SELECT DISTINCT cavity_clean, condition_std\r\n    FROM ng_lot_cavity\r\n),\r\nd_qc AS (\r\n    SELECT DISTINCT cavity_clean, qc_member_val\r\n    FROM ng_lot_cavity\r\n),\r\n-- ✅ รวม STRING_AGG แยกทีละ field\r\nagg_breakdown AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(part_name,      ' / ') AS part_name_agg\r\n    FROM d_part GROUP BY cavity_clean\r\n),\r\nagg_material AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(material_no,    ' / ') AS material_no_agg\r\n    FROM d_material GROUP BY cavity_clean\r\n),\r\nagg_oi AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(oi_no,          ' / ') AS oi_no_agg\r\n    FROM d_oi GROUP BY cavity_clean\r\n),\r\nagg_sample AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(sample_part_no, ' / ') AS sample_part_no_agg\r\n    FROM d_sample GROUP BY cavity_clean\r\n),\r\nagg_lot AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(lot_material,   ' / ') AS lot_material_agg\r\n    FROM d_lot GROUP BY cavity_clean\r\n),\r\nagg_cond AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(condition_std,  ' / ') AS condition_std_agg\r\n    FROM d_cond GROUP BY cavity_clean\r\n),\r\nagg_qc AS (\r\n    SELECT\r\n        cavity_clean,\r\n        STRING_AGG(qc_member_val,  ' / ') AS qc_member_agg\r\n    FROM d_qc GROUP BY cavity_clean\r\n),\r\n-- ✅ นับ NG Count จาก ng_lot_cavity เหมือนเดิม\r\nng_count AS (\r\n    SELECT\r\n        cavity_clean,\r\n        COUNT(DISTINCT [Identical ID]) AS ng_count\r\n    FROM ng_lot_cavity\r\n    GROUP BY cavity_clean\r\n)\r\nSELECT\r\n    'Cavity ' + nc.cavity_clean    AS [Cavity],\r\n    nc.ng_count                    AS [NG Count],\r\n    ab.part_name_agg               AS [Part Name],\r\n    am.material_no_agg             AS [Material No.],\r\n    ao.oi_no_agg                   AS [OI No.],\r\n    asa.sample_part_no_agg         AS [Sample Part No.],\r\n    al.lot_material_agg            AS [Lot Material],\r\n    ac.condition_std_agg           AS [Condition STD],\r\n    aq.qc_member_agg               AS [QC Member]\r\nFROM ng_count             AS nc\r\nLEFT JOIN agg_breakdown   AS ab  ON ab.cavity_clean  = nc.cavity_clean\r\nLEFT JOIN agg_material    AS am  ON am.cavity_clean  = nc.cavity_clean\r\nLEFT JOIN agg_oi          AS ao  ON ao.cavity_clean  = nc.cavity_clean\r\nLEFT JOIN agg_sample      AS asa ON asa.cavity_clean = nc.cavity_clean\r\nLEFT JOIN agg_lot         AS al  ON al.cavity_clean  = nc.cavity_clean\r\nLEFT JOIN agg_cond        AS ac  ON ac.cavity_clean  = nc.cavity_clean\r\nLEFT JOIN agg_qc          AS aq  ON aq.cavity_clean  = nc.cavity_clean\r\nORDER BY\r\n    CASE\r\n        WHEN TRY_CAST(nc.cavity_clean AS INT) IS NOT NULL\r\n        THEN TRY_CAST(nc.cavity_clean AS INT)\r\n        ELSE 9999\r\n    END ASC,\r\n    nc.cavity_clean ASC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "CAVITY — INSPECTION COUNT (NG) PER CAVITY",
+      "type": "barchart"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    LTRIM(RTRIM(CAST([Year Record] AS VARCHAR))) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY __value DESC",
+        "label": "Year",
+        "multi": true,
+        "name": "year",
+        "options": [],
+        "query": "SELECT DISTINCT\n    LTRIM(RTRIM(CAST([Year Record] AS VARCHAR))) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL\nORDER BY __value DESC",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "Jan"
+          ],
+          "value": [
+            "1"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    LTRIM(RTRIM([Month Record])) AS __value      -- ✅ เลขดิบ ตรงกับที่ Main Query ต้องการ\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE LTRIM(RTRIM([Month Record])) != ''\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "label": "Month",
+        "multi": true,
+        "name": "month",
+        "options": [],
+        "query": "SELECT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    LTRIM(RTRIM([Month Record])) AS __value      -- ✅ เลขดิบ ตรงกับที่ Main Query ต้องการ\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE LTRIM(RTRIM([Month Record])) != ''\nORDER BY CAST(LTRIM(RTRIM([Month Record])) AS INT)",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "1079",
+          "value": "1079"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    LTRIM(RTRIM([Mold No.])) AS __text,\n    LTRIM(RTRIM([Mold No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND LTRIM(RTRIM([Mold No.])) != ''\n  AND [Judgement [S]]] = 'X'     -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "includeAll": false,
+        "label": "Mold No.",
+        "name": "mold_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    LTRIM(RTRIM([Mold No.])) AS __text,\n    LTRIM(RTRIM([Mold No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Mold No.] IS NOT NULL\n  AND LTRIM(RTRIM([Mold No.])) != ''\n  AND [Judgement [S]]] = 'X'     -- ✅ เฉพาะ Mold ที่มี NG เท่านั้น\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "ST-13",
+          "value": "ST-13"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    LTRIM(RTRIM([M/C No.])) AS __text,\n    LTRIM(RTRIM([M/C No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND LTRIM(RTRIM([M/C No.])) != ''\n  AND [Judgement [S]]] = 'X'    -- ✅ เฉพาะที่มี NG\n  AND LTRIM(RTRIM([Mold No.])) IN (${mold_no:singlequote})        -- ✅ กรองตาม Mold No.\nORDER BY __value",
+        "label": "M/C No.",
+        "name": "mc_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    LTRIM(RTRIM([M/C No.])) AS __text,\n    LTRIM(RTRIM([M/C No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [M/C No.] IS NOT NULL\n  AND LTRIM(RTRIM([M/C No.])) != ''\n  AND [Judgement [S]]] = 'X'    -- ✅ เฉพาะที่มี NG\n  AND LTRIM(RTRIM([Mold No.])) IN (${mold_no:singlequote})        -- ✅ กรองตาม Mold No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": "EH2300231P953",
+          "value": "EH2300231P953"
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    LTRIM(RTRIM([Part No.])) AS __text,\n    LTRIM(RTRIM([Part No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n\nWHERE [Part No.] IS NOT NULL\n  AND LTRIM(RTRIM([Part No.])) != ''\n  AND [Judgement [S]]] = 'X'   -- ✅ เฉพาะที่มี NG\n  AND LTRIM(RTRIM([Mold No.])) IN (${mold_no:singlequote})        -- ✅ กรองตาม Mold No.\n  AND LTRIM(RTRIM([M/C No.]))  IN (${mc_no:singlequote})          -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "label": "Part No.",
+        "name": "part_no",
+        "options": [],
+        "query": "SELECT DISTINCT\n    LTRIM(RTRIM([Part No.])) AS __text,\n    LTRIM(RTRIM([Part No.])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\n\nWHERE [Part No.] IS NOT NULL\n  AND LTRIM(RTRIM([Part No.])) != ''\n  AND [Judgement [S]]] = 'X'   -- ✅ เฉพาะที่มี NG\n  AND LTRIM(RTRIM([Mold No.])) IN (${mold_no:singlequote})        -- ✅ กรองตาม Mold No.\n  AND LTRIM(RTRIM([M/C No.]))  IN (${mc_no:singlequote})          -- ✅ กรองตาม M/C No.\nORDER BY __value",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "CAVITY — INSPECTION COUNT (NG) PER CAVITY",
+  "uid": "ffnl12r6hv474f",
+  "version": 43,
+  "weekStart": ""
+}

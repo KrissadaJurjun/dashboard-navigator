@@ -1,0 +1,553 @@
+{
+  "annotations": {
+    "list": [
+      {
+        "builtIn": 1,
+        "datasource": {
+          "type": "grafana",
+          "uid": "-- Grafana --"
+        },
+        "enable": true,
+        "hide": true,
+        "iconColor": "rgba(0, 211, 255, 1)",
+        "name": "Annotations & Alerts",
+        "type": "dashboard"
+      }
+    ]
+  },
+  "editable": true,
+  "fiscalYearStartMonth": 0,
+  "graphTooltip": 0,
+  "id": 187,
+  "links": [],
+  "panels": [
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "OK Lots"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "NG Lots"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "Blank Lots"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "text",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 0
+      },
+      "id": 3,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 1,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "never",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "AI_Vision_for_test",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH distinct_lots AS (\r\n    SELECT DISTINCT\r\n        LTRIM(RTRIM([Part Type]))    AS Part_Type,\r\n        LTRIM(RTRIM([Identical ID])) AS Identical_ID,\r\n        LTRIM(RTRIM([QC Member]))    AS QC_Member,\r\n        LTRIM(RTRIM([Year Record]))  AS Year_Record,\r\n        LTRIM(RTRIM([Month Record])) AS Month_Record,\r\n        LTRIM(RTRIM([File Run No.])) AS File_Run_No,\r\n        LTRIM(RTRIM([Sequence]))     AS Sequence_No,\r\n        LTRIM(RTRIM([Lot]))          AS lot_state,\r\n        UPPER(LTRIM(RTRIM([Status]))) AS status_val\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        LTRIM(RTRIM([Part Type]))        IN (${part_type:singlequote})\r\n        AND LTRIM(RTRIM([Month Record])) IN (${month:singlequote})\r\n        AND LTRIM(RTRIM([Year Record]))  IN (${year:singlequote})\r\n        AND [QC Member] IS NOT NULL\r\n        AND LTRIM(RTRIM([QC Member])) != ''\r\n        -- ✅ เงื่อนไขที่ 1: เฉพาะ Status = OK หรือ NG เท่านั้น\r\n        AND UPPER(LTRIM(RTRIM([Status]))) IN ('OK', 'NG')\r\n        -- ✅ เงื่อนไขที่ 2: ตัด Lot Blank ออก ให้เหมือน BY LOT และ STATE TIMELINE\r\n        AND UPPER(LTRIM(RTRIM([Lot])))    IN ('S', 'E', 'M', 'S+E')\r\n),\r\n-- ✅ Step 2: Flag OK / NG ต่อ Lot (ตัด BLANK ออกแล้ว ไม่ต้องมี priority 1)\r\nlot_status_flag AS (\r\n    SELECT\r\n        QC_Member,\r\n        Part_Type,\r\n        Identical_ID,\r\n        Year_Record,\r\n        Month_Record,\r\n        File_Run_No,\r\n        Sequence_No,\r\n        MAX(CASE WHEN status_val = 'NG' THEN 1 ELSE 0 END) AS is_ng\r\n    FROM distinct_lots\r\n    GROUP BY\r\n        QC_Member,\r\n        Part_Type,\r\n        Identical_ID,\r\n        Year_Record,\r\n        Month_Record,\r\n        File_Run_No,\r\n        Sequence_No\r\n),\r\n-- ✅ Step 3: สรุปต่อ QC_Member\r\nsummary AS (\r\n    SELECT\r\n        QC_Member,\r\n        COUNT(*)                                    AS total_lots,\r\n        COUNT(CASE WHEN is_ng = 0 THEN 1 END)      AS ok_lots,\r\n        COUNT(CASE WHEN is_ng = 1 THEN 1 END)      AS ng_lots\r\n    FROM lot_status_flag\r\n    GROUP BY QC_Member\r\n)\r\n-- ✅ Step 4: Final SELECT — ลบ Blank Lots ออก\r\nSELECT\r\n    QC_Member + ' (' + CAST(total_lots AS NVARCHAR(10)) + ')' AS [QC Member],\r\n    ok_lots  AS [OK Lots],\r\n    ng_lots  AS [NG Lots]\r\nFROM summary\r\nWHERE total_lots > 0\r\nORDER BY total_lots DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          }
+        }
+      ],
+      "title": "QR_MEMBER WORKLOAD BY NG ",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "thresholds"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 0,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              }
+            ]
+          }
+        },
+        "overrides": [
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "S (Start)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-green",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "S+E (Start+End)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-blue",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "M (Middle)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-purple",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          },
+          {
+            "matcher": {
+              "id": "byName",
+              "options": "E (End)"
+            },
+            "properties": [
+              {
+                "id": "color",
+                "value": {
+                  "fixedColor": "dark-red",
+                  "mode": "fixed"
+                }
+              }
+            ]
+          }
+        ]
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 8
+      },
+      "id": 2,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.97,
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "never",
+        "stacking": "normal",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH distinct_lots AS (\r\n    SELECT\r\n        LTRIM(RTRIM([Part Type]))    AS Part_Type,\r\n        LTRIM(RTRIM([Identical ID])) AS Identical_ID,\r\n        LTRIM(RTRIM([QC Member]))    AS QC_Member,\r\n        LTRIM(RTRIM([Year Record]))  AS Year_Record,\r\n        LTRIM(RTRIM([Month Record])) AS Month_Record,\r\n        LTRIM(RTRIM([File Run No.])) AS File_Run_No,\r\n        LTRIM(RTRIM([Sequence]))     AS Sequence_No,\r\n        MAX(LTRIM(RTRIM([Lot])))     AS lot_state\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        LTRIM(RTRIM([Part Type]))        IN (${part_type:singlequote})\r\n        AND LTRIM(RTRIM([Year Record]))  IN (${year:singlequote})\r\n        AND LTRIM(RTRIM([Month Record])) IN (${month:singlequote})\r\n        AND [QC Member] IS NOT NULL\r\n        AND LTRIM(RTRIM([QC Member])) != ''\r\n        -- ✅ เงื่อนไขที่ 1: เฉพาะ Status = OK หรือ NG เท่านั้น\r\n        AND UPPER(LTRIM(RTRIM([Status]))) IN ('OK', 'NG')\r\n        -- ✅ เงื่อนไขที่ 2: เฉพาะ Lot = S, E, M, S+E เท่านั้น\r\n        AND UPPER(LTRIM(RTRIM([Lot]))) IN ('S', 'E', 'M', 'S+E')\r\n    GROUP BY\r\n        LTRIM(RTRIM([Part Type])),\r\n        LTRIM(RTRIM([Identical ID])),\r\n        LTRIM(RTRIM([QC Member])),\r\n        LTRIM(RTRIM([Year Record])),\r\n        LTRIM(RTRIM([Month Record])),\r\n        LTRIM(RTRIM([File Run No.])),\r\n        LTRIM(RTRIM([Sequence]))\r\n),\r\nsummary AS (\r\n    SELECT\r\n        QC_Member,\r\n        COUNT(CASE WHEN UPPER(lot_state) = 'S'             THEN 1 END) AS s_count,\r\n        COUNT(CASE WHEN UPPER(lot_state) = 'E'             THEN 1 END) AS e_count,\r\n        COUNT(CASE WHEN UPPER(lot_state) = 'M'             THEN 1 END) AS m_count,\r\n        COUNT(CASE WHEN UPPER(lot_state) IN ('S+E', 'SE')  THEN 1 END) AS se_count,\r\n        COUNT(*) AS total_count\r\n    FROM distinct_lots\r\n    GROUP BY QC_Member\r\n)\r\nSELECT\r\n    QC_Member + ' [' + CAST(total_count AS NVARCHAR(10)) + ']' AS [QC Member],\r\n    s_count   AS [S (Start)],\r\n    e_count   AS [E (End)],\r\n    m_count   AS [M (Middle)],\r\n    se_count  AS [S+E (Start+End)]\r\nFROM summary\r\nWHERE total_count > 0\r\nORDER BY total_count DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "QR_MEMBER WORKLOAD BY STATE TIMELINE",
+      "type": "barchart"
+    },
+    {
+      "datasource": {
+        "type": "mssql",
+        "uid": "efm4a9lbncd1ca"
+      },
+      "description": "Workload balance view not individual performance ranking ",
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "continuous-RdYlGr"
+          },
+          "custom": {
+            "axisBorderShow": false,
+            "axisCenteredZero": false,
+            "axisColorMode": "text",
+            "axisLabel": "",
+            "axisPlacement": "auto",
+            "fillOpacity": 80,
+            "gradientMode": "none",
+            "hideFrom": {
+              "legend": false,
+              "tooltip": false,
+              "viz": false
+            },
+            "lineWidth": 1,
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
+          },
+          "mappings": [],
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green"
+              },
+              {
+                "color": "red",
+                "value": 80
+              }
+            ]
+          }
+        },
+        "overrides": []
+      },
+      "gridPos": {
+        "h": 14,
+        "w": 21,
+        "x": 0,
+        "y": 16
+      },
+      "id": 1,
+      "options": {
+        "barRadius": 0,
+        "barWidth": 0.93,
+        "colorByField": "Lot Count",
+        "fullHighlight": false,
+        "groupWidth": 0.7,
+        "legend": {
+          "calcs": [],
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
+        },
+        "orientation": "horizontal",
+        "showValue": "auto",
+        "stacking": "none",
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
+        },
+        "xTickLabelRotation": 0,
+        "xTickLabelSpacing": 0
+      },
+      "pluginVersion": "11.4.0",
+      "targets": [
+        {
+          "dataset": "DigitalQC",
+          "datasource": {
+            "type": "mssql",
+            "uid": "efm4a9lbncd1ca"
+          },
+          "editorMode": "code",
+          "format": "table",
+          "rawQuery": true,
+          "rawSql": "WITH distinct_lots AS (\r\n    SELECT DISTINCT\r\n        [Part Type],\r\n        [Identical ID],\r\n        [QC Member],\r\n        [Year Record],\r\n        [Month Record],\r\n        [File Run No.],\r\n        [Sequence]\r\n    FROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\r\n    WHERE\r\n        LTRIM(RTRIM([Part Type]))        IN (${part_type:singlequote})\r\n        AND LTRIM(RTRIM([Month Record])) IN (${month:singlequote})\r\n        AND LTRIM(RTRIM([Year Record]))  IN (${year:singlequote})\r\n        AND UPPER(LTRIM(RTRIM([Status]))) IN ('OK', 'NG')\r\n        -- ✅ เพิ่มบรรทัดนี้: ตัด Lot Blank ออก ให้เหมือน STATE TIMELINE\r\n        AND UPPER(LTRIM(RTRIM([Lot]))) IN ('S', 'E', 'M', 'S+E')\r\n)\r\nSELECT\r\n    [QC Member]  AS [QC Member],\r\n    COUNT(*)     AS [Lot Count]\r\nFROM distinct_lots\r\nGROUP BY [QC Member]\r\nORDER BY [Lot Count] DESC",
+          "refId": "A",
+          "sql": {
+            "columns": [
+              {
+                "parameters": [],
+                "type": "function"
+              }
+            ],
+            "groupBy": [
+              {
+                "property": {
+                  "type": "string"
+                },
+                "type": "groupBy"
+              }
+            ],
+            "limit": 50
+          },
+          "table": "dbo.Copy of InspectionRecord@Injection_Database_2026"
+        }
+      ],
+      "title": "QR_MEMBER WORKLOAD BY LOT",
+      "type": "barchart"
+    }
+  ],
+  "preload": false,
+  "schemaVersion": 40,
+  "tags": [],
+  "templating": {
+    "list": [
+      {
+        "allValue": "All",
+        "current": {
+          "text": [
+            "Injection"
+          ],
+          "value": [
+            "Injection"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT [Part_Type] AS __text, [Part_Type] AS __value\nFROM [DigitalQC].[dbo].[Copy of InspectionRecord@Injection_Database_2026]\nWHERE [Part_Type] IS NOT NULL \n  AND LTRIM(RTRIM([Part_Type])) <> ''\nORDER BY [Part_Type];",
+        "includeAll": false,
+        "label": "Data Type",
+        "multi": true,
+        "name": "part_type",
+        "options": [],
+        "query": "SELECT DISTINCT [Part_Type] AS __text, [Part_Type] AS __value\nFROM [DigitalQC].[dbo].[Copy of InspectionRecord@Injection_Database_2026]\nWHERE [Part_Type] IS NOT NULL \n  AND LTRIM(RTRIM([Part_Type])) <> ''\nORDER BY [Part_Type];",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "2026"
+          ],
+          "value": [
+            "2026"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT [Year Record] AS __text, [Year Record] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL \n  AND LTRIM(RTRIM([Year Record])) <> ''\nORDER BY [Year Record];",
+        "includeAll": false,
+        "label": "Year",
+        "multi": true,
+        "name": "year",
+        "options": [],
+        "query": "SELECT DISTINCT [Year Record] AS __text, [Year Record] AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE [Year Record] IS NOT NULL \n  AND LTRIM(RTRIM([Year Record])) <> ''\nORDER BY [Year Record];",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      },
+      {
+        "current": {
+          "text": [
+            "Jan"
+          ],
+          "value": [
+            "1"
+          ]
+        },
+        "datasource": {
+          "type": "mssql",
+          "uid": "efm4a9lbncd1ca"
+        },
+        "definition": "SELECT DISTINCT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    LTRIM(RTRIM([Month Record])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE LTRIM(RTRIM([Month Record])) \n    IN ('1','2','3','4','5','6','7','8','9','10','11','12')\nORDER BY __value;",
+        "label": "Months",
+        "multi": true,
+        "name": "month",
+        "options": [],
+        "query": "SELECT DISTINCT\n    CASE LTRIM(RTRIM([Month Record]))\n        WHEN '1'  THEN 'Jan' WHEN '2'  THEN 'Feb'\n        WHEN '3'  THEN 'Mar' WHEN '4'  THEN 'Apr'\n        WHEN '5'  THEN 'May' WHEN '6'  THEN 'Jun'\n        WHEN '7'  THEN 'Jul' WHEN '8'  THEN 'Aug'\n        WHEN '9'  THEN 'Sep' WHEN '10' THEN 'Oct'\n        WHEN '11' THEN 'Nov' WHEN '12' THEN 'Dec'\n    END AS __text,\n    LTRIM(RTRIM([Month Record])) AS __value\nFROM [DigitalQC].[dbo].[InspectionRecord@Injection_Database]\nWHERE LTRIM(RTRIM([Month Record])) \n    IN ('1','2','3','4','5','6','7','8','9','10','11','12')\nORDER BY __value;",
+        "refresh": 1,
+        "regex": "",
+        "type": "query"
+      }
+    ]
+  },
+  "time": {
+    "from": "now-6h",
+    "to": "now"
+  },
+  "timepicker": {},
+  "timezone": "browser",
+  "title": "QC_MEMBER WORKLOAD",
+  "uid": "ffnekdrm4tyiod",
+  "version": 45,
+  "weekStart": ""
+}

@@ -59,7 +59,6 @@ DASHBOARDS = [
         "sub_dashboards": [
             {"name": "QC Member Workload",               "url": "http://158.118.37.201:3000/d/ffnekdrm4tyiod/qc-member-workload",                           "icon": "👥"},
             {"name": "Room Temp & Humidity Monthly Avg", "url": "http://158.118.37.201:3000/d/dfoabsa4i1x4wd/room-temp-and-humidity-per-monthly-avg",         "icon": "🌡️"}
-        ]
     },
     {
         "id": "d2", "name": "D2 — Dimensional SPC",

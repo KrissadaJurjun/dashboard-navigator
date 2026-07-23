@@ -1,14 +1,3 @@
-"""
-Dashboard Navigator — main.py
-============================
-หน้าที่ของไฟล์นี้: Infrastructure + Routing เท่านั้น
-
-ไม่มีเนื้อหา Dashboard ใดๆ ในนี้
-ไม่มีกฎการตอบใดๆ ในนี้
-
-กฎทั้งหมด → knowledge/ai_rules.md
-ข้อมูล Dashboard → knowledge/*.md
-"""
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
@@ -59,6 +48,7 @@ DASHBOARDS = [
         "sub_dashboards": [
             {"name": "QC Member Workload",               "url": "http://158.118.37.201:3000/d/ffnekdrm4tyiod/qc-member-workload",                           "icon": "👥"},
             {"name": "Room Temp & Humidity Monthly Avg", "url": "http://158.118.37.201:3000/d/dfoabsa4i1x4wd/room-temp-and-humidity-per-monthly-avg",         "icon": "🌡️"}
+        ]
     },
     {
         "id": "d2", "name": "D2 — Dimensional SPC",

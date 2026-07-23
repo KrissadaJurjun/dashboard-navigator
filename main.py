@@ -34,19 +34,19 @@ MEMORY_DIR.mkdir(exist_ok=True)
 
 # ── Ollama options (ปรับ speed/quality ตรงนี้) ────────────────────────────
 MAIN_OPTIONS = {
-    "temperature":    0.65,
-    "num_predict":    600,   # 3b รับได้มากกว่า → ตอบครบทั้ง 3 Panel
+    "temperature":    0.3,
+    "num_predict":    400,   # 3b รับได้มากกว่า → ตอบครบทั้ง 3 Panel
     "repeat_penalty": 1.1,
     "stop":           ["</s>", "\n\n\n\n"],
-    "num_ctx":        4096,   # เพิ่มจาก 2048 → 4096 เพื่อรองรับ ai_rules.md
-    "num_thread":     8,
+    "num_ctx":        1024,   # เพิ่มจาก 2048 → 4096 เพื่อรองรับ ai_rules.md
+    "num_thread":     4,
 }
 RETRY_OPTIONS = {
     "temperature": 0.3,
-    "num_predict": 250,
+    "num_predict": 400,
     "stop":        ["</s>", "\n\n\n\n"],
-    "num_ctx":     2048,
-    "num_thread":  8,
+    "num_ctx":     1024,
+    "num_thread":  4,
 }
 
 DASHBOARDS = [
